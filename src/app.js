@@ -21,19 +21,29 @@ app.use(passport.session());
 
 connect()
 
-app.get("hello-world", (req, res) => {
+const redirectUri = process.env.REDIRECT_URI
+
+app.get('/', (req, res) => {
+  res.send(
+    `
+    <h1>Kurtd Daniel Bigtas owns this.</h1>
+    `
+  )
+
+})
+
+app.get("/hello-world", (req, res) => {
   success(res, { message: "Hello, world!" });
 });
-
 
 app.get('/auth/google',
   passport.authenticate('google', { scope: ['profile', 'email'] })
 );
 
 app.get('/auth/google/callback',
-  passport.authenticate('google', { failureRedirect: '/' }),
+  passport.authenticate('google', { failureRedirect: redirectUri }),
   (req, res) => {
-    res.redirect('/'); 
+    res.redirect('http://localhost:5090/api/v1/users/@me'); 
   }
 );
 
