@@ -9,12 +9,14 @@ import http from "http";
 import { Server } from "socket.io";
 import { success } from "./utils/httpResponse.js";
 import { connect } from "../config/db.js";
+import { addNewUser, removeUser } from "./utils/socketManager.js";
 
 dotenv.config();
 
 const app = express();
-const httpServer = http.createServer(app)
+const httpServer = http.createServer(app);
 const io = new Server(httpServer);
+
 
 app.use(helmet());
 app.use(express.json());
@@ -54,17 +56,27 @@ app.get(
   }
 );
 
-app.use("/api/v1/users", (req, res, next) => {
-  req.io = io;
-  next();
-}, userRouter);
+app.use(
+  "/api/v1/users",
+  (req, res, next) => {
+    req.io = io;
+    next();
+  },
+  userRouter
+);
 
-io.on('connection', (socket) => {
-  console.log(socket)
-  console.log('a user connected');
-  
-  socket.on('disconnect', () => {
-    console.log('user disconnected');
+io.on("connection", (socket) => {
+  console.log(socket.id)
+  socket.on("disconnect", () => {
+    removeUser(socket.id);
+  });
+
+  socket.on("live", (data) => {
+    addNewUser(data, socket.id);
+  });
+
+  socket.on("die", () => {
+    removeUser(socket.id);
   });
 });
 
