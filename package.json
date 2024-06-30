@@ -1,0 +1,29 @@
+{
+  "name": "express.js-backend-template",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node ./src/index.js",
+    "server": "nodemon ./src/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "backend",
+    "node.js",
+    "express.js",
+    "API"
+  ],
+  "author": "Kurtd Daniel Bigtas",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-async-handler": "^1.2.0",
+    "helmet": "^7.1.0",
+    "mongoose": "^8.4.3",
+    "nodemon": "^3.1.4"
+  }
+}
