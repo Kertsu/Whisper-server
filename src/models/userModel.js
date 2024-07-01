@@ -9,6 +9,7 @@ const userSchema = new mongoose.Schema(
     googleId: { type: String, unique: true, sparse: true },
     facebookId: { type: String, unique: true, sparse: true },
     avatar: { type: String },
+    hasOnboard: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
