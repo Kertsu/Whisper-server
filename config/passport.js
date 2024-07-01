@@ -15,16 +15,23 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        console.log(profile);
         let user = await User.findOne({ googleId: profile.id });
 
         if (!user) {
-          user = await User.create({
-            googleId: profile.id,
-            email: profile.emails[0].value,
-            username: profile.displayName,
-            avatar: profile.photos[0].value,
-          });
+          user = await User.findOne({ email: profile.emails[0].value });
+
+          if (!user) {
+            user = await User.create({
+              googleId: profile.id,
+              email: profile.emails[0].value,
+              username: profile.displayName,
+              avatar: profile.photos[0].value,
+            });
+          } else {
+            user.avatar = user.avatar ? user.avatar : profile.photos[0].value;
+            user.googleId = profile.id;
+            await user.save();
+          }
         }
 
         done(null, user);
@@ -44,15 +51,14 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        const {id, displayName, name, username} = profile
-        let newUserUn
+        const { id, displayName, name, username } = profile;
+        let newUserUn;
         console.log(profile);
-        if (!username){
-          newUserUn = displayName.split(' ')[0];
+        if (!username) {
+          newUserUn = displayName.split(" ")[0];
         }
 
         let user = await User.findOne({ facebookId: id });
-
 
         if (!user) {
           user = await User.create({

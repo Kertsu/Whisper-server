@@ -37,8 +37,7 @@ const login = asyncHandler(async (req, res, next) => {
 
   const user = await User.findOne({
     $or: [{ username }, { email }],
-    facebookId: undefined,
-    googleId: undefined,
+    password: {$exists: true}
   });
 
   if (!user) {
