@@ -17,7 +17,6 @@ const app = express();
 const httpServer = http.createServer(app);
 const io = new Server(httpServer);
 
-
 app.use(helmet());
 app.use(express.json());
 app.use(cors());
@@ -56,6 +55,16 @@ app.get(
   }
 );
 
+app.get("/auth/facebook", passport.authenticate("facebook"));
+
+app.get(
+  "/auth/facebook/callback",
+  passport.authenticate("facebook", { failureRedirect: redirectUri }),
+  (req, res) => {
+    res.redirect("http://localhost:5090/api/v1/users/@me");
+  }
+);
+
 app.use(
   "/api/v1/users",
   (req, res, next) => {
@@ -66,7 +75,7 @@ app.use(
 );
 
 io.on("connection", (socket) => {
-  console.log(socket.id)
+  console.log(socket.id);
   socket.on("disconnect", () => {
     removeUser(socket.id);
   });

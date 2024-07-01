@@ -1,5 +1,6 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import { Strategy as FacebookStrategy } from "passport-facebook";
 import User from "../src/models/userModel.js";
 import dotenv from "dotenv";
 
@@ -14,7 +15,7 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        console.log(profile)
+        console.log(profile);
         let user = await User.findOne({ googleId: profile.id });
 
         if (!user) {
@@ -22,7 +23,41 @@ passport.use(
             googleId: profile.id,
             email: profile.emails[0].value,
             username: profile.displayName,
-            avatar: profile.photos[0].value
+            avatar: profile.photos[0].value,
+          });
+        }
+
+        done(null, user);
+      } catch (err) {
+        done(err, null);
+      }
+    }
+  )
+);
+
+passport.use(
+  new FacebookStrategy(
+    {
+      clientID: process.env.FACEBOOK_APP_ID,
+      clientSecret: process.env.FACEBOOK_APP_SECRET,
+      callbackURL: "/auth/facebook/callback",
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        const {id, displayName, name, username} = profile
+        let newUserUn
+        console.log(profile);
+        if (!username){
+          newUserUn = displayName.split(' ')[0];
+        }
+
+        let user = await User.findOne({ facebookId: id });
+
+
+        if (!user) {
+          user = await User.create({
+            facebookId: id,
+            username: newUserUn,
           });
         }
 
