@@ -15,3 +15,19 @@ export const getSelf = asyncHandler(async (req, res, next) => {
     next(error);
   }
 });
+
+export const logout = asyncHandler(async(req, res, next) => {
+  console.log('3grd')
+  req.logout((err) => {
+    if (err) {
+      return next(err);
+    }
+    req.session.destroy((err) => {
+      if (err) {
+        return next(err);
+      }
+      res.clearCookie('connect.sid'); 
+      res.redirect('http://localhost:4200');
+    });
+  });
+}) 
