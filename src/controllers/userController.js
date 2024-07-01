@@ -35,27 +35,17 @@ const login = asyncHandler(async (req, res, next) => {
   const { email, username, password } = req.body;
   console.log(req.body);
 
-  const andCondition = [
-    { facebookId: { $exists: false } },
-    { googleId: { $exists: false } },
-  ];
-
-  const userByUsername = await User.findOne({
-    username,
-    ...andCondition,
+  const user = await User.findOne({
+    $or: [{ username }, { email }],
+    facebookId: undefined,
+    googleId: undefined,
   });
-  const userByEmail = await User.findOne({
-    email,
-    ...andCondition,
-  });
-
-  const user = userByEmail || userByUsername;
 
   if (!user) {
-    return error(res, null, "User does not exist", 404);
+    return error(res, null, "Sorry, we couldn't find your account.", 404);
   }
 
-  if (!user.matchPassword(password)) {
+  if (!(await user.matchPassword(password))) {
     return error(res, null, "Invalid credentials", 401);
   }
 
@@ -67,4 +57,32 @@ const login = asyncHandler(async (req, res, next) => {
   });
 });
 
-export { getSelf, logout, login };
+const register = asyncHandler(async (req, res, next) => {
+  const { email, password } = req.body;
+
+  const user = await User.findOne({ email });
+
+  if (user) {
+    return error(res, null, "Email already in use.", 409);
+  }
+
+  try {
+    const username = email.split("@")[0];
+    const newUser = await User.create({
+      email,
+      username,
+      password,
+    });
+
+    req.login(newUser, (err) => {
+      if (err) {
+        return next(err);
+      }
+      return success(res, { user: newUser }, "User created successfully");
+    });
+  } catch (error) {
+    return error(res, null, "Internal Server Error", 500);
+  }
+});
+
+export { getSelf, logout, login, register };
