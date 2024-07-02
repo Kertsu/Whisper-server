@@ -49,15 +49,11 @@ const login = asyncHandler(async (req, res, next) => {
     return error(res, null, "Invalid credentials", 401);
   }
 
-  if (!user.emailVerifiedAt){
-    return error(res, null, "Please verify your email", 401);
-  }
-
   req.login(user, (err) => {
     if (err) {
       return next(err);
     }
-    return success(res, { user });
+    return success(res, { user, otp: user.emailVerifiedAt ? false : true });
   });
 });
 
@@ -78,18 +74,36 @@ const register = asyncHandler(async (req, res, next) => {
       password,
     });
 
-    sendOTP({ email });
+    sendOTP({ email, name: username });
 
-    // req.login(newUser, (err) => {
-    //   if (err) {
-    //     return next(err);
-    //   }
-    //   return success(res, { user: newUser }, "User created successfully");
-    // });
-    return success(res, { user: newUser }, "OTP sent to your email");
+    req.login(newUser, (err) => {
+      if (err) {
+        return next(err);
+      }
+      return success(res, { user: newUser }, "OTP sent to your email");
+    });
   } catch (error) {
     return error(res, null, "Internal Server Error", 500);
   }
 });
 
-export { getSelf, logout, login, register };
+const resendOTP = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    return res.status(400).json({
+      success: false,
+      error: "User not found",
+    });
+  }
+
+  sendOTP({ email: user.email, name: user.username });
+
+  return success(
+    res,
+    null,
+    "OTP has been sent successfully. Please check your email for the code."
+  );
+});
+
+export { getSelf, logout, login, register, resendOTP };
