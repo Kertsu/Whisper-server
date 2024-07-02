@@ -4,19 +4,20 @@ import Message from "./messageModel.js";
 const conversationSchema = new mongoose.Schema(
   {
     initiator: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: true
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
     recipient: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: true
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
     initiatorUsername: {
-        type: String,
-        required: true
-    }
+      type: String,
+      required: true,
+      unique: true,
+    },
   },
   { timestamps: true }
 );

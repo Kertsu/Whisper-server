@@ -10,6 +10,8 @@ import { Server } from "socket.io";
 import { success } from "./utils/httpResponse.js";
 import { connect } from "../config/db.js";
 import { addNewUser, removeUser } from "./utils/socketManager.js";
+import conversationRouter from "./routes/conversationRoutes.js";
+import { attachIo } from "./middlewares/authMiddleware.js";
 
 dotenv.config();
 
@@ -65,14 +67,8 @@ app.get(
   }
 );
 
-app.use(
-  "/api/v1/users",
-  (req, res, next) => {
-    req.io = io;
-    next();
-  },
-  userRouter
-);
+app.use("/api/v1/users", attachIo(io), userRouter);
+app.use("/api/v1/conversations", attachIo(io), conversationRouter);
 
 io.on("connection", (socket) => {
   console.log(socket.id);
