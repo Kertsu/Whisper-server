@@ -26,6 +26,8 @@ passport.use(
               email: profile.emails[0].value,
               username: profile.displayName,
               avatar: profile.photos[0].value,
+              verification: undefined,
+              emailVerifiedAt: Date.now()
             });
           } else {
             user.avatar = user.avatar ? user.avatar : profile.photos[0].value;

@@ -160,4 +160,20 @@ const deleteSelf = asyncHandler(async (req, res, next) => {
   }
 });
 
-export { getSelf, logout, login, register, resendOTP, verifyOTP, deleteSelf };
+const validateUsername = asyncHandler(async (req, res, next) => {
+  const { username } = req.params;
+  const user = await User.findOne({ username }).select('_id username avatar');
+
+  if (!user) {
+    return error(
+      res,
+      null,
+      "Sorry, we couldn't find the user you were looking for",
+      404
+    );
+  }
+
+  return success(res, { user });
+});
+
+export { getSelf, logout, login, register, resendOTP, verifyOTP, deleteSelf, validateUsername };

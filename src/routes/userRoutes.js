@@ -6,6 +6,7 @@ import {
   logout,
   register,
   resendOTP,
+  validateUsername,
   verifyOTP,
 } from "../controllers/userController.js";
 import {
@@ -28,5 +29,11 @@ userRouter.post("/resend-otp", isAuthenticated, resendOTP);
 userRouter.post("/verify", isAuthenticated, verifyOTP);
 
 userRouter.delete("/delete", isVerifiedAndAuthenticated, deleteSelf);
+
+userRouter.post(
+  "/validate/:username",
+  isVerifiedAndAuthenticated,
+  validateUsername
+);
 
 export default userRouter;
