@@ -1,6 +1,7 @@
 import asyncHandler from "express-async-handler";
 import { error, success } from "../utils/httpResponse.js";
 import User from "../models/userModel.js";
+import { sendOTP } from "../utils/mailer.js";
 
 const getSelf = asyncHandler(async (req, res, next) => {
   try {
@@ -37,7 +38,7 @@ const login = asyncHandler(async (req, res, next) => {
 
   const user = await User.findOne({
     $or: [{ username }, { email }],
-    password: {$exists: true}
+    password: { $exists: true },
   });
 
   if (!user) {
@@ -46,6 +47,10 @@ const login = asyncHandler(async (req, res, next) => {
 
   if (!(await user.matchPassword(password))) {
     return error(res, null, "Invalid credentials", 401);
+  }
+
+  if (!user.emailVerifiedAt){
+    return error(res, null, "Please verify your email", 401);
   }
 
   req.login(user, (err) => {
@@ -73,12 +78,15 @@ const register = asyncHandler(async (req, res, next) => {
       password,
     });
 
-    req.login(newUser, (err) => {
-      if (err) {
-        return next(err);
-      }
-      return success(res, { user: newUser }, "User created successfully");
-    });
+    sendOTP({ email });
+
+    // req.login(newUser, (err) => {
+    //   if (err) {
+    //     return next(err);
+    //   }
+    //   return success(res, { user: newUser }, "User created successfully");
+    // });
+    return success(res, { user: newUser }, "OTP sent to your email");
   } catch (error) {
     return error(res, null, "Internal Server Error", 500);
   }
