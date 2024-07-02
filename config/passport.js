@@ -30,6 +30,8 @@ passport.use(
           } else {
             user.avatar = user.avatar ? user.avatar : profile.photos[0].value;
             user.googleId = profile.id;
+            user.emailVerifiedAt = Date.now()
+            user.verification = undefined
             await user.save();
           }
         }

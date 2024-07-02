@@ -5,8 +5,12 @@ import {
   logout,
   register,
   resendOTP,
+  verifyOTP,
 } from "../controllers/userController.js";
-import { isAuthenticated, isVerifiedAndAuthenticated } from "../middlewares/authMiddleware.js";
+import {
+  isAuthenticated,
+  isVerifiedAndAuthenticated,
+} from "../middlewares/authMiddleware.js";
 
 const userRouter = express.Router();
 
@@ -19,5 +23,7 @@ userRouter.post("/login", login);
 userRouter.post("/register", register);
 
 userRouter.post("/resend-otp", isAuthenticated, resendOTP);
+
+userRouter.post("/verify", isAuthenticated, verifyOTP);
 
 export default userRouter;

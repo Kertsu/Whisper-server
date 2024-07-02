@@ -1,4 +1,5 @@
 import asyncHandler from "express-async-handler";
+import bcrypt from "bcryptjs";
 import { error, success } from "../utils/httpResponse.js";
 import User from "../models/userModel.js";
 import { sendOTP } from "../utils/mailer.js";
@@ -97,6 +98,10 @@ const resendOTP = asyncHandler(async (req, res) => {
     });
   }
 
+  if (user.emailVerifiedAt) {
+    return error(res, null, "Email already verified", 409);
+  }
+
   sendOTP({ email: user.email, name: user.username });
 
   return success(
@@ -106,4 +111,31 @@ const resendOTP = asyncHandler(async (req, res) => {
   );
 });
 
-export { getSelf, logout, login, register, resendOTP };
+const verifyOTP = asyncHandler(async (req, res, next) => {
+  const { otp } = req.body;
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    return error(res, null, "User not found", 404);
+  }
+
+  if (user.emailVerifiedAt) {
+    return error(res, null, "Email already verified", 409);
+  }
+
+  if (user.verification.expiresAt < Date.now()) {
+    return error(res, null, "OTP expired", 401);
+  }
+
+  if (await bcrypt.compare(otp, user.verification.code)) {
+    user.emailVerifiedAt = Date.now();
+    user.verification = undefined;
+
+    await user.save();
+    return success(res, { user }, "Email verified successfully");
+  } else {
+    return error(res, null, "Invalid OTP", 401);
+  }
+});
+
+export { getSelf, logout, login, register, resendOTP, verifyOTP };
