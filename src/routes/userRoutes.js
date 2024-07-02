@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  deleteSelf,
   getSelf,
   login,
   logout,
@@ -25,5 +26,7 @@ userRouter.post("/register", register);
 userRouter.post("/resend-otp", isAuthenticated, resendOTP);
 
 userRouter.post("/verify", isAuthenticated, verifyOTP);
+
+userRouter.delete("/delete", isVerifiedAndAuthenticated, deleteSelf);
 
 export default userRouter;

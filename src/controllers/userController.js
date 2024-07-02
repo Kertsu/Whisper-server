@@ -4,6 +4,21 @@ import { error, success } from "../utils/httpResponse.js";
 import User from "../models/userModel.js";
 import { sendOTP } from "../utils/mailer.js";
 
+const destroySession = (req, res) => {
+  req.logout((err) => {
+    if (err) {
+      return next(err);
+    }
+    req.session.destroy((err) => {
+      if (err) {
+        return next(err);
+      }
+      res.clearCookie("connect.sid");
+      res.redirect("http://localhost:4200");
+    });
+  });
+};
+
 const getSelf = asyncHandler(async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id);
@@ -19,18 +34,7 @@ const getSelf = asyncHandler(async (req, res, next) => {
 });
 
 const logout = asyncHandler(async (req, res, next) => {
-  req.logout((err) => {
-    if (err) {
-      return next(err);
-    }
-    req.session.destroy((err) => {
-      if (err) {
-        return next(err);
-      }
-      res.clearCookie("connect.sid");
-      res.redirect("http://localhost:4200");
-    });
-  });
+  destroySession(req, res);
 });
 
 const login = asyncHandler(async (req, res, next) => {
@@ -138,4 +142,22 @@ const verifyOTP = asyncHandler(async (req, res, next) => {
   }
 });
 
-export { getSelf, logout, login, register, resendOTP, verifyOTP };
+const deleteSelf = asyncHandler(async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return error(res, null, "User not found", 404);
+    }
+
+    await user.deleteOne();
+
+    destroySession(req, res);
+
+    return success(res, null, "User deleted successfully");
+  } catch (error) {
+    return error(res, error, "Failed to delete user", 500);
+  }
+});
+
+export { getSelf, logout, login, register, resendOTP, verifyOTP, deleteSelf };
