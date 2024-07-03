@@ -8,7 +8,7 @@ import Message from "../models/messageModel.js";
 const getConversations = asyncHandler(async (req, res, next) => {
   const { first, rows } = req.query;
 
-  const userId = req.user._id
+  const userId = req.user._id;
 
   const pipeline = [
     {
@@ -81,7 +81,40 @@ const getConversations = asyncHandler(async (req, res, next) => {
 
 const getMessages = asyncHandler(async (req, res, next) => {});
 
-const sendMessage = asyncHandler(async (req, res, next) => {});
+const sendMessage = asyncHandler(async (req, res, next) => {
+  const { conversationId } = req.params;
+  const { content } = req.body;
+  const senderId = req.user._id;
+
+  const conversation = await Conversation.findById(conversationId);
+
+  if (
+    !conversation ||
+    (!conversation.recipient.equals(senderId) &&
+      !conversation.initiator.equals(senderId))
+  ) {
+    return error(res, null, "Conversation not found", 404);
+  }
+
+  if (!content) {
+    return error(res, null, "Content is required", 400);
+  }
+
+  const initiatorDeleted = await User.findById(conversation.initiator);
+  const recipientDeleted = await User.findById(conversation.recipient);
+
+  if (!initiatorDeleted || !recipientDeleted) {
+    return error(res, null, "This person is unavailable on Whisper", 403);
+  }
+
+  const message = await Message.create({
+    sender: senderId,
+    conversation: conversationId,
+    content,
+  });
+
+  return success(res, { message }, "Message sent successfully");
+});
 
 const updateMessage = asyncHandler(async (req, res, next) => {});
 
