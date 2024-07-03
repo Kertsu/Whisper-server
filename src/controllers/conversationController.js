@@ -202,7 +202,34 @@ const updateMessage = asyncHandler(async (req, res, next) => {
   return success(res, { message }, "Message updated successfully");
 });
 
-const markMessageAsRead = asyncHandler(async (req, res, next) => {});
+const markMessageAsRead = asyncHandler(async (req, res, next) => {
+  const { messageId, conversationId } = req.params;
+  const requestingUserId = req.user._id;
+
+  const conversation = await Conversation.findById(conversationId);
+
+  if (
+    !conversation ||
+    (conversation.recipient.equals(requestingUserId) &&
+      conversation.initiator.equals(requestingUserId))
+  ) {
+    return error(res, null, "Conversation not found", 404);
+  }
+
+  const message = await Message.findOne({
+    _id: messageId,
+    sender: { $ne: requestingUserId },
+  });
+
+  if (!message) {
+    return error(res, null, "Message not found", 404);
+  }
+
+  message.readAt = Date.now();
+  await message.save();
+
+  return success(res, { message }, "Message marked as read");
+});
 
 const initiateConversation = asyncHandler(async (req, res, next) => {
   const { username } = req.params;
