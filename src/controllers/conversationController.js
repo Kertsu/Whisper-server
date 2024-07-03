@@ -172,7 +172,35 @@ const sendMessage = asyncHandler(async (req, res, next) => {
   return success(res, { message }, "Message sent successfully");
 });
 
-const updateMessage = asyncHandler(async (req, res, next) => {});
+const updateMessage = asyncHandler(async (req, res, next) => {
+  const content = req.body.content;
+  const { messageId, conversationId } = req.params;
+
+  const conversation = await Conversation.findById(conversationId);
+
+  if (!conversation) {
+    return error(res, null, "Conversation not found", 404);
+  }
+
+  const message = await Message.findById(messageId);
+
+  if (!message) {
+    return error(res, null, "Message not found", 404);
+  }
+
+  if (!message.sender.equals(req.user._id)) {
+    return error(res, null, "Invalid action", 403);
+  }
+
+  if (!content) {
+    return error(res, null, "Content is required", 400);
+  }
+
+  message.content = content;
+  await message.save();
+
+  return success(res, { message }, "Message updated successfully");
+});
 
 const markMessageAsRead = asyncHandler(async (req, res, next) => {});
 
