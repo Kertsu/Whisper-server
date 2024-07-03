@@ -79,7 +79,63 @@ const getConversations = asyncHandler(async (req, res, next) => {
   }
 });
 
-const getMessages = asyncHandler(async (req, res, next) => {});
+const getMessages = asyncHandler(async (req, res, next) => {
+  const requestingUserId = req.user._id;
+  const conversationId = req.params.conversationId;
+  const { rows = 10, before } = req.query;
+
+  const conversation = await Conversation.findById(conversationId);
+
+  if (
+    !conversation ||
+    (!conversation.recipient.equals(requestingUserId) &&
+      !conversation.initiator.equals(requestingUserId))
+  ) {
+    return error(res, null, "Conversation not found", 404);
+  }
+
+  const messagesQuery = Message.find({ conversation: conversationId }).sort({
+    createdAt: -1,
+  });
+
+  if (before) {
+    messagesQuery.where("createdAt").lt(new Date(before));
+  }
+
+  const messages = await messagesQuery.limit(parseInt(rows)).exec();
+
+  if (messages.length === 0) {
+    return success(res, { messages, olderMessages: 0 });
+  }
+
+  const olderMessages = await Message.countDocuments({
+    conversation: conversationId,
+    createdAt: { $lt: messages[messages.length - 1].createdAt },
+  });
+
+  const latestMessage = await Message.findOne({
+    conversation: conversationId,
+    sender: { $ne: requestingUserId },
+    readAt: null,
+  }).sort({ createdAt: -1 });
+
+  if (latestMessage) {
+    await Message.updateMany(
+      {
+        conversation: conversationId,
+        sender: latestMessage.sender,
+        createdAt: { $lte: latestMessage.createdAt },
+        readAt: null,
+      },
+      { readAt: new Date() }
+    );
+
+    // Trigger event if necessary
+    // event(new ReadMessage(latestMessage));
+  }
+
+  return success(res, { messages, olderMessages });
+});
 
 const sendMessage = asyncHandler(async (req, res, next) => {
   const { conversationId } = req.params;
