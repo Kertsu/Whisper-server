@@ -5,7 +5,79 @@ import Conversation from "../models/conversationsModel.js";
 import User from "../models/userModel.js";
 import Message from "../models/messageModel.js";
 
-const getConversations = asyncHandler(async (req, res, next) => {});
+const getConversations = asyncHandler(async (req, res, next) => {
+  const { first, rows } = req.query;
+
+  const userId = req.user._id
+
+  const pipeline = [
+    {
+      $match: {
+        $or: [{ initiator: userId }, { recipient: userId }],
+      },
+    },
+    {
+      $lookup: {
+        from: "messages",
+        let: { conversationId: "$_id" },
+        pipeline: [
+          { $match: { $expr: { $eq: ["$conversation", "$$conversationId"] } } },
+          { $sort: { createdAt: -1 } },
+          { $limit: 1 },
+        ],
+        as: "latestMessage",
+      },
+    },
+    { $unwind: { path: "$latestMessage", preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: "users",
+        localField: "recipient",
+        foreignField: "_id",
+        as: "recipient",
+      },
+    },
+    { $unwind: "$recipient" },
+    {
+      $project: {
+        _id: 1,
+        initiator: 1,
+        recipient: { _id: 1, username: 1 },
+        initiatorUsername: 1,
+        latestMessage: {
+          _id: 1,
+          sender: 1,
+          content: 1,
+          createdAt: 1,
+        },
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    },
+    { $sort: { "latestMessage.createdAt": -1 } },
+  ];
+
+  if (first !== undefined && rows !== undefined) {
+    pipeline.push({ $skip: parseInt(first) });
+    pipeline.push({ $limit: parseInt(rows) });
+  }
+
+  try {
+    const conversations = await Conversation.aggregate(pipeline).exec();
+    const totalRecords = await Conversation.countDocuments({
+      $or: [{ initiator: userId }, { recipient: userId }],
+    });
+
+    return success(
+      res,
+      { conversations, totalRecords },
+      "Conversations fetched successfully"
+    );
+  } catch (err) {
+    console.log(err);
+    return error(res, null, "Error while fetching conversations");
+  }
+});
 
 const getMessages = asyncHandler(async (req, res, next) => {});
 
@@ -55,13 +127,13 @@ const initiateConversation = asyncHandler(async (req, res, next) => {
       initiatorUsername,
     });
 
-    const message = await Message.create({
+    await Message.create({
       sender: req.user._id,
       conversation: newConversation._id,
       content,
     });
 
-    console.log(req.io);
+    // console.log(req.io);
 
     return success(res, { newConversation }, "Message sent");
   } catch (err) {
