@@ -19,3 +19,51 @@ export const generateInitiatorUsername = async () => {
 
   return randomUsername;
 };
+
+export const buildConversationPipeline = (matchCondition) => {
+  return [
+    {
+      $match: matchCondition,
+    },
+    {
+      $lookup: {
+        from: "messages",
+        let: { conversationId: "$_id" },
+        pipeline: [
+          { $match: { $expr: { $eq: ["$conversation", "$$conversationId"] } } },
+          { $sort: { createdAt: -1 } },
+          { $limit: 1 },
+        ],
+        as: "latestMessage",
+      },
+    },
+    { $unwind: { path: "$latestMessage", preserveNullAndEmptyArrays: true } },
+    {
+      $lookup: {
+        from: "users",
+        localField: "recipient",
+        foreignField: "_id",
+        as: "recipient",
+      },
+    },
+    { $unwind: "$recipient" },
+    {
+      $project: {
+        _id: 1,
+        initiator: 1,
+        recipient: { _id: 1, username: 1 },
+        initiatorUsername: 1,
+        latestMessage: {
+          _id: 1,
+          sender: 1,
+          content: 1,
+          createdAt: 1,
+          readAt: 1,
+        },
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    },
+    { $sort: { "latestMessage.createdAt": -1 } },
+  ];
+};

@@ -19,8 +19,3 @@ export const isVerifiedAndAuthenticated = (req, res, next) => {
 
   return next();
 };
-
-export const attachIo = (io) => (req, res, next) => {
-  req.io = io;
-  next();
-};

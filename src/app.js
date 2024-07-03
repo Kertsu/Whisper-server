@@ -11,7 +11,6 @@ import { success } from "./utils/httpResponse.js";
 import { connect } from "../config/db.js";
 import { addNewUser, removeUser } from "./utils/socketManager.js";
 import conversationRouter from "./routes/conversationRoutes.js";
-import { attachIo } from "./middlewares/authMiddleware.js";
 
 dotenv.config();
 
@@ -24,6 +23,10 @@ const allowedOrigins = [
   "http://localhost:5090",
 ];
 
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
 app.use(helmet());
 app.use(express.json());
 app.use(
@@ -89,11 +92,10 @@ app.get(
   }
 );
 
-app.use("/api/v1/users", attachIo(io), userRouter);
-app.use("/api/v1/conversations", attachIo(io), conversationRouter);
+app.use("/api/v1/users", userRouter);
+app.use("/api/v1/conversations", conversationRouter);
 
 io.on("connection", (socket) => {
-  console.log(socket.id);
   socket.on("disconnect", () => {
     removeUser(socket.id);
   });

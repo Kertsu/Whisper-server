@@ -1,62 +1,22 @@
 import asyncHandler from "express-async-handler";
 import { error, success } from "../utils/httpResponse.js";
-import { generateInitiatorUsername } from "../utils/helpers.js";
+import {
+  buildConversationPipeline,
+  generateInitiatorUsername,
+} from "../utils/helpers.js";
 import Conversation from "../models/conversationsModel.js";
 import User from "../models/userModel.js";
 import Message from "../models/messageModel.js";
+import { getUserById } from "../utils/socketManager.js";
 
 const getConversations = asyncHandler(async (req, res, next) => {
   const { first, rows } = req.query;
 
   const userId = req.user._id;
 
-  const pipeline = [
-    {
-      $match: {
-        $or: [{ initiator: userId }, { recipient: userId }],
-      },
-    },
-    {
-      $lookup: {
-        from: "messages",
-        let: { conversationId: "$_id" },
-        pipeline: [
-          { $match: { $expr: { $eq: ["$conversation", "$$conversationId"] } } },
-          { $sort: { createdAt: -1 } },
-          { $limit: 1 },
-        ],
-        as: "latestMessage",
-      },
-    },
-    { $unwind: { path: "$latestMessage", preserveNullAndEmptyArrays: true } },
-    {
-      $lookup: {
-        from: "users",
-        localField: "recipient",
-        foreignField: "_id",
-        as: "recipient",
-      },
-    },
-    { $unwind: "$recipient" },
-    {
-      $project: {
-        _id: 1,
-        initiator: 1,
-        recipient: { _id: 1, username: 1 },
-        initiatorUsername: 1,
-        latestMessage: {
-          _id: 1,
-          sender: 1,
-          content: 1,
-          createdAt: 1,
-          readAt: 1
-        },
-        createdAt: 1,
-        updatedAt: 1,
-      },
-    },
-    { $sort: { "latestMessage.createdAt": -1 } },
-  ];
+  const pipeline = buildConversationPipeline({
+    $or: [{ initiator: userId }, { recipient: userId }],
+  });
 
   if (first !== undefined && rows !== undefined) {
     pipeline.push({ $skip: parseInt(first) });
@@ -254,7 +214,7 @@ const initiateConversation = asyncHandler(async (req, res, next) => {
     return error(res, null, "Conversation already exists");
   }
 
-  if (req.user._id === recipient._id) {
+  if (req.user._id.equals(recipient._id)) {
     return error(
       res,
       null,
@@ -278,7 +238,20 @@ const initiateConversation = asyncHandler(async (req, res, next) => {
       content,
     });
 
-    // console.log(req.io);
+    const pipeline = buildConversationPipeline({ _id: newConversation._id });
+
+    const conversations = await Conversation.aggregate(pipeline).exec();
+
+    let conversation = conversations[0];
+
+    const receiver = getUserById(recipient._id);
+
+    if (receiver) {
+      req.io
+        .to(receiver.socketId)
+        .emit(`receive.${receiver._id}`, {conversation});
+
+    }
 
     return success(res, { newConversation }, "Message sent");
   } catch (err) {
