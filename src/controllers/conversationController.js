@@ -49,6 +49,7 @@ const getConversations = asyncHandler(async (req, res, next) => {
           sender: 1,
           content: 1,
           createdAt: 1,
+          readAt: 1
         },
         createdAt: 1,
         updatedAt: 1,

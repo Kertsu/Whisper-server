@@ -19,16 +19,38 @@ const app = express();
 const httpServer = http.createServer(app);
 const io = new Server(httpServer);
 
+const allowedOrigins = [
+  "http://localhost:4200",
+  "http://localhost:5090",
+];
+
 app.use(helmet());
 app.use(express.json());
-app.use(cors());
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (allowedOrigins.includes(origin) || !origin) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  })
+);
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
+    cookie: {
+      httpOnly: true,
+      secure: false
+    }
   })
 );
+
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -53,7 +75,7 @@ app.get(
   "/auth/google/callback",
   passport.authenticate("google", { failureRedirect: redirectUri }),
   (req, res) => {
-    res.redirect("http://localhost:5090/api/v1/users/@me");
+    res.redirect("http://localhost:4200/whisper/whisps");
   }
 );
 
@@ -63,7 +85,7 @@ app.get(
   "/auth/facebook/callback",
   passport.authenticate("facebook", { failureRedirect: redirectUri }),
   (req, res) => {
-    res.redirect("http://localhost:5090/api/v1/users/@me");
+    res.redirect("http://localhost:4200/whisper/whisps");
   }
 );
 

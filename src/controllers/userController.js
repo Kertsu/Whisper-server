@@ -4,7 +4,7 @@ import { error, success } from "../utils/httpResponse.js";
 import User from "../models/userModel.js";
 import { sendOTP } from "../utils/mailer.js";
 
-const destroySession = (req, res) => {
+const destroySession = (req, res, next, message = null) => {
   req.logout((err) => {
     if (err) {
       return next(err);
@@ -13,8 +13,8 @@ const destroySession = (req, res) => {
       if (err) {
         return next(err);
       }
-      res.clearCookie("connect.sid");
-      res.redirect("http://localhost:4200");
+      res.clearCookie("connect.sid", { path: "/" });
+      return success(res, null, message);
     });
   });
 };
@@ -34,7 +34,7 @@ const getSelf = asyncHandler(async (req, res, next) => {
 });
 
 const logout = asyncHandler(async (req, res, next) => {
-  destroySession(req, res);
+  destroySession(req, res, next, "Logged out");
 });
 
 const login = asyncHandler(async (req, res, next) => {
@@ -152,9 +152,7 @@ const deleteSelf = asyncHandler(async (req, res, next) => {
 
     await user.deleteOne();
 
-    destroySession(req, res);
-
-    return success(res, null, "User deleted successfully");
+    destroySession(req, res, next, "User deleted successfully");
   } catch (error) {
     return error(res, error, "Failed to delete user", 500);
   }
@@ -162,7 +160,7 @@ const deleteSelf = asyncHandler(async (req, res, next) => {
 
 const validateUsername = asyncHandler(async (req, res, next) => {
   const { username } = req.params;
-  const user = await User.findOne({ username }).select('_id username avatar');
+  const user = await User.findOne({ username }).select("_id username avatar");
 
   if (!user) {
     return error(
@@ -176,4 +174,20 @@ const validateUsername = asyncHandler(async (req, res, next) => {
   return success(res, { user });
 });
 
-export { getSelf, logout, login, register, resendOTP, verifyOTP, deleteSelf, validateUsername };
+const checkAuth = asyncHandler(async (req, res, next) => {
+  res.json({
+    isAuthenticated: req.isAuthenticated(),
+  });
+});
+
+export {
+  getSelf,
+  logout,
+  login,
+  register,
+  resendOTP,
+  verifyOTP,
+  deleteSelf,
+  validateUsername,
+  checkAuth,
+};

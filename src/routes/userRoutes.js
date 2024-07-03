@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  checkAuth,
   deleteSelf,
   getSelf,
   login,
@@ -16,6 +17,8 @@ import {
 
 const userRouter = express.Router();
 
+userRouter.get("/auth/check", checkAuth);
+
 userRouter.get("/@me", isVerifiedAndAuthenticated, getSelf);
 
 userRouter.get("/logout", isAuthenticated, logout);
@@ -28,7 +31,7 @@ userRouter.post("/resend-otp", isAuthenticated, resendOTP);
 
 userRouter.post("/verify", isAuthenticated, verifyOTP);
 
-userRouter.delete("/delete", isVerifiedAndAuthenticated, deleteSelf);
+userRouter.delete("/self/delete", isVerifiedAndAuthenticated, deleteSelf);
 
 userRouter.post(
   "/validate/:username",
