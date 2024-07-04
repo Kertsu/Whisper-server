@@ -55,10 +55,12 @@ export const buildConversationPipeline = (matchCondition) => {
         initiatorUsername: 1,
         latestMessage: {
           _id: 1,
+          conversation: 1,
           sender: 1,
           content: 1,
-          createdAt: 1,
           readAt: 1,
+          createdAt: 1,
+          updatedAt: 1,
         },
         createdAt: 1,
         updatedAt: 1,

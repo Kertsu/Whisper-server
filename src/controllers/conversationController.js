@@ -124,13 +124,17 @@ const sendMessage = asyncHandler(async (req, res, next) => {
     return error(res, null, "This person is unavailable on Whisper", 403);
   }
 
-  const message = await Message.create({
+  const newMessage = await Message.create({
     sender: senderId,
     conversation: conversationId,
     content,
   });
 
-  return success(res, { message }, "Message sent successfully");
+  const message = await Message.findById(newMessage._id).populate('conversation')
+
+  req.io.emit(`conversation.${conversation._id}`, {message})
+
+  return success(res, { newMessage }, "Message sent successfully");
 });
 
 const updateMessage = asyncHandler(async (req, res, next) => {
