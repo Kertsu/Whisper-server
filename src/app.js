@@ -49,7 +49,10 @@ app.use(
     saveUninitialized: true,
     cookie: {
       secure: process.env.NODE_ENV === 'production',
-      httpOnly: process.env.NODE_ENV === 'development'
+      httpOnly: true,
+      sameSite: 'none', 
+      maxAge: 24 * 60 * 60 * 1000, 
+      domain: '.onrender.com' 
     },
     store: MongoStore.create({
       mongoUrl: process.env.MONGO_URI,
