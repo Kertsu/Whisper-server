@@ -47,8 +47,7 @@ app.use(
     resave: false,
     saveUninitialized: true,
     cookie: {
-      httpOnly: true,
-      secure: false
+      secure: true
     }
   })
 );
@@ -77,6 +76,7 @@ app.get(
   "/auth/google/callback",
   passport.authenticate("google", { failureRedirect: redirectUri }),
   (req, res) => {
+    console.log('Authenticated user:', req.user);
     res.redirect(`${process.env.APP_URL}/whisper/whisps`);
   }
 );
@@ -87,6 +87,7 @@ app.get(
   "/auth/facebook/callback",
   passport.authenticate("facebook", { failureRedirect: redirectUri }),
   (req, res) => {
+    console.log('Authenticated user:', req.user);
     res.redirect(`${process.env.APP_URL}/whisper/whisps`);
   }
 );
