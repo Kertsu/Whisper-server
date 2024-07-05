@@ -50,9 +50,9 @@ app.use(
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
-      sameSite: 'none', 
+      // sameSite: 'none', 
       maxAge: 24 * 60 * 60 * 1000, 
-      domain: '.onrender.com' 
+      domain: '.vercel.app' 
     },
     store: MongoStore.create({
       mongoUrl: process.env.MONGO_URI,
@@ -86,7 +86,7 @@ app.get(
   passport.authenticate("google", { failureRedirect: redirectUri }),
   (req, res) => {
     console.log('Authenticated user:', req.user);
-    res.redirect(`${process.env.APP_URL}`);
+    res.redirect(`${process.env.APP_URL}/whisper/whisps`);
   }
 );
 
@@ -97,7 +97,7 @@ app.get(
   passport.authenticate("facebook", { failureRedirect: redirectUri }),
   (req, res) => {
     console.log('Authenticated user:', req.user);
-    res.redirect(`${process.env.APP_URL}`);
+    res.redirect(`${process.env.APP_URL}/whisper/whisps`);
   }
 );
 
