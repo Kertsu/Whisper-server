@@ -11,6 +11,7 @@ import { success } from "./utils/httpResponse.js";
 import { connect } from "../config/db.js";
 import { addNewUser, removeUser } from "./utils/socketManager.js";
 import conversationRouter from "./routes/conversationRoutes.js";
+import MongoStore from "connect-mongo";
 
 dotenv.config();
 
@@ -47,8 +48,13 @@ app.use(
     resave: false,
     saveUninitialized: true,
     cookie: {
-      secure: true
-    }
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: process.env.NODE_ENV === 'development'
+    },
+    store: MongoStore.create({
+      mongoUrl: process.env.MONGO_URI,
+      collectionName: 'sessions'
+    })
   })
 );
 
@@ -77,7 +83,7 @@ app.get(
   passport.authenticate("google", { failureRedirect: redirectUri }),
   (req, res) => {
     console.log('Authenticated user:', req.user);
-    res.redirect(`${process.env.APP_URL}/whisper/whisps`);
+    res.redirect(`${process.env.APP_URL}`);
   }
 );
 
@@ -88,7 +94,7 @@ app.get(
   passport.authenticate("facebook", { failureRedirect: redirectUri }),
   (req, res) => {
     console.log('Authenticated user:', req.user);
-    res.redirect(`${process.env.APP_URL}/whisper/whisps`);
+    res.redirect(`${process.env.APP_URL}`);
   }
 );
 
