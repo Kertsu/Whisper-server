@@ -50,9 +50,9 @@ app.use(
     cookie: {
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
-      // sameSite: 'none', 
+      sameSite: 'none', 
       maxAge: 24 * 60 * 60 * 1000, 
-      domain: '.vercel.app' 
+      domain: '.onrender.com' 
     },
     store: MongoStore.create({
       mongoUrl: process.env.MONGO_URI,
