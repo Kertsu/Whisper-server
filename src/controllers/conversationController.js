@@ -78,7 +78,7 @@ const getMessages = asyncHandler(async (req, res, next) => {
     conversation: conversationId,
     sender: { $ne: requestingUserId },
     readAt: null,
-  }).sort({ createdAt: -1 });
+  }).sort({ createdAt: -1 }).populate('conversation');
 
   if (latestMessage) {
     await Message.updateMany(
@@ -91,8 +91,10 @@ const getMessages = asyncHandler(async (req, res, next) => {
       { readAt: new Date() }
     );
 
-    // Trigger event if necessary
-    // event(new ReadMessage(latestMessage));
+    const message = latestMessage
+    console.log(message)
+
+    req.io.emit(`read.${conversation._id}`, { message });
   }
 
   return success(res, { messages, olderMessages });
@@ -130,9 +132,11 @@ const sendMessage = asyncHandler(async (req, res, next) => {
     content,
   });
 
-  const message = await Message.findById(newMessage._id).populate('conversation')
+  const message = await Message.findById(newMessage._id).populate(
+    "conversation"
+  );
 
-  req.io.emit(`conversation.${conversation._id}`, {message})
+  req.io.emit(`conversation.${conversation._id}`, { message });
 
   return success(res, { newMessage }, "Message sent successfully");
 });
@@ -184,7 +188,7 @@ const markMessageAsRead = asyncHandler(async (req, res, next) => {
   const message = await Message.findOne({
     _id: messageId,
     sender: { $ne: requestingUserId },
-  });
+  }).populate('conversation');
 
   if (!message) {
     return error(res, null, "Message not found", 404);
@@ -192,6 +196,8 @@ const markMessageAsRead = asyncHandler(async (req, res, next) => {
 
   message.readAt = Date.now();
   await message.save();
+
+  req.io.emit(`read.${conversation._id}`, { message });
 
   return success(res, { message }, "Message marked as read");
 });
@@ -250,11 +256,11 @@ const initiateConversation = asyncHandler(async (req, res, next) => {
 
     const receiver = getUserById(recipient._id);
 
+    console.log(receiver)
     if (receiver) {
       req.io
         .to(receiver.socketId)
-        .emit(`receive.${receiver._id}`, {conversation});
-
+        .emit(`receive.${receiver._id}`, { conversation });
     }
 
     return success(res, { newConversation }, "Message sent");

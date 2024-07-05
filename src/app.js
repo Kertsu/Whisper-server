@@ -19,8 +19,7 @@ const httpServer = http.createServer(app);
 const io = new Server(httpServer);
 
 const allowedOrigins = [
-  "http://localhost:4200",
-  "http://localhost:5090",
+  process.env.APP_URL, process.env.SERVICE_URL
 ];
 
 app.use((req, res, next) => {
@@ -78,7 +77,7 @@ app.get(
   "/auth/google/callback",
   passport.authenticate("google", { failureRedirect: redirectUri }),
   (req, res) => {
-    res.redirect("http://localhost:4200/whisper/whisps");
+    res.redirect(`${process.env.APP_URL}/whisper/whisps`);
   }
 );
 
@@ -88,7 +87,7 @@ app.get(
   "/auth/facebook/callback",
   passport.authenticate("facebook", { failureRedirect: redirectUri }),
   (req, res) => {
-    res.redirect("http://localhost:4200/whisper/whisps");
+    res.redirect(`${process.env.APP_URL}/whisper/whisps`);
   }
 );
 

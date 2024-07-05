@@ -38,11 +38,11 @@ const logout = asyncHandler(async (req, res, next) => {
 });
 
 const login = asyncHandler(async (req, res, next) => {
-  const { email, username, password } = req.body;
+  const { email, password } = req.body;
   console.log(req.body);
 
   const user = await User.findOne({
-    $or: [{ username }, { email }],
+    email,
     password: { $exists: true },
   });
 
