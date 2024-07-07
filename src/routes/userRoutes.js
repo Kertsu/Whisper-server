@@ -8,7 +8,7 @@ import {
   register,
   resendOTP,
   validateUsername,
-  verifyOTP,
+  verifyEmail,
 } from "../controllers/userController.js";
 import {
   isAuthenticated,
@@ -17,7 +17,7 @@ import {
 
 const userRouter = express.Router();
 
-userRouter.get("/auth/check", isAuthenticated, checkAuth);
+userRouter.get("/auth/check", checkAuth);
 
 userRouter.get("/@me", isVerifiedAndAuthenticated, getSelf);
 
@@ -27,16 +27,12 @@ userRouter.post("/register", register);
 
 userRouter.post("/resend-otp", isAuthenticated, resendOTP);
 
-userRouter.post("/verify", isAuthenticated, verifyOTP);
+userRouter.post("/verify", verifyEmail);
 
-userRouter.post(
-  "/validate/:username",
-  isVerifiedAndAuthenticated,
-  validateUsername
-);
-
+userRouter.post("/validate/:username", isVerifiedAndAuthenticated, validateUsername );
 
 userRouter.delete("/self/delete", isVerifiedAndAuthenticated, deleteSelf);
 
 userRouter.get("/logout", isAuthenticated, logout);
+
 export default userRouter;

@@ -1,24 +1,9 @@
 import asyncHandler from "express-async-handler";
-import bcrypt from "bcryptjs";
 import { error, success } from "../utils/httpResponse.js";
 import User from "../models/userModel.js";
-import { sendOTP } from "../utils/mailer.js";
+import { sendVerificationLink } from "../utils/mailer.js";
 import { generateToken } from "../utils/helpers.js";
-
-const destroySession = (req, res, next, message = null) => {
-  req.logout((err) => {
-    if (err) {
-      return next(err);
-    }
-    req.session.destroy((err) => {
-      if (err) {
-        return next(err);
-      }
-      res.clearCookie("connect.sid", { path: "/" });
-      return success(res, null, message);
-    });
-  });
-};
+import jwt from 'jsonwebtoken'
 
 const getSelf = asyncHandler(async (req, res, next) => {
   try {
@@ -34,8 +19,30 @@ const getSelf = asyncHandler(async (req, res, next) => {
   }
 });
 
+/**
+ * @todo revoke token
+ */
 const logout = asyncHandler(async (req, res, next) => {
-  destroySession(req, res, next, "Logged out");
+  return success(res, null, "Logged out successfully");
+});
+
+/**
+ * @todo revoke token
+ */
+const deleteSelf = asyncHandler(async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return error(res, null, "User not found", 404);
+    }
+
+    await user.deleteOne();
+
+    return success(res, null, "Account deleted successfully");
+  } catch (error) {
+    return error(res, error, "Failed to delete user", 500);
+  }
 });
 
 const login = asyncHandler(async (req, res, next) => {
@@ -82,9 +89,11 @@ const register = asyncHandler(async (req, res, next) => {
       password,
     });
 
-    sendOTP({ email, name: username });
+    const token = generateToken(newUser._id, {expiresIn: '1hr'})
 
-    return success(res, { user: newUser }, "OTP sent to your email");
+    sendVerificationLink({ email, name: username, token });
+
+    return success(res, { user: newUser }, "Please verify your email");
   } catch (error) {
     return error(res, null, "Internal Server Error", 500);
   }
@@ -113,46 +122,26 @@ const resendOTP = asyncHandler(async (req, res) => {
   );
 });
 
-const verifyOTP = asyncHandler(async (req, res, next) => {
-  const { otp } = req.body;
-  const user = await User.findById(req.user._id);
-
-  if (!user) {
-    return error(res, null, "User not found", 404);
-  }
-
-  if (user.emailVerifiedAt) {
-    return error(res, null, "Email already verified", 409);
-  }
-
-  if (await bcrypt.compare(otp, user.verification.code)) {
-    if (user.verification.expiresAt < Date.now()) {
-      return error(res, null, "OTP expired", 401);
-    }
-
-    user.emailVerifiedAt = Date.now();
-    user.verification = undefined;
-
-    await user.save();
-    return success(res, { user }, "Email verified successfully");
-  } else {
-    return error(res, null, "Invalid OTP", 401);
-  }
-});
-
-const deleteSelf = asyncHandler(async (req, res, next) => {
+const verifyEmail = asyncHandler(async (req, res, next) => {
+  const { token } = req.body;
+ 
   try {
-    const user = await User.findById(req.user._id);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id).select('-password');
 
     if (!user) {
-      return error(res, null, "User not found", 404);
+      return error(res, null, 'Invalid token', 400);
     }
 
-    await user.deleteOne();
+    const newToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-    destroySession(req, res, next, "User deleted successfully");
-  } catch (error) {
-    return error(res, error, "Failed to delete user", 500);
+    user.emailVerifiedAt = new Date();
+    await user.save()
+
+    return success(res, { token: newToken, user }, 'Email verified and user logged in');
+  } catch (err) {
+    console.error(err);
+    return error(res, null, 'Invalid or expired token', 400);
   }
 });
 
@@ -174,7 +163,7 @@ const validateUsername = asyncHandler(async (req, res, next) => {
 
 const checkAuth = asyncHandler(async (req, res, next) => {
   res.json({
-    isAuthenticated: true,
+    isAuthenticated: req.user ? true : false,
   });
 });
 
@@ -184,7 +173,7 @@ export {
   login,
   register,
   resendOTP,
-  verifyOTP,
+  verifyEmail,
   deleteSelf,
   validateUsername,
   checkAuth,

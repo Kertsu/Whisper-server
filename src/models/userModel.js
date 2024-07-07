@@ -10,16 +10,6 @@ const userSchema = new mongoose.Schema(
     facebookId: { type: String, unique: true, sparse: true },
     avatar: { type: String },
     hasOnboard: { type: Boolean, default: false },
-    verification: {
-      code: {
-        type: String,
-        default: null,
-      },
-      expiresAt: {
-        type: Date,
-        default: null,
-      },
-    },
     emailVerifiedAt: {
       type: Date,
       default: null,
