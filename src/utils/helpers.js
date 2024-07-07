@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import Conversation from "../models/conversationsModel.js";
+import jwt from 'jsonwebtoken'
 
 const generateRandomString = (length) => {
   const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -69,3 +70,8 @@ export const buildConversationPipeline = (matchCondition) => {
     { $sort: { "latestMessage.createdAt": -1 } },
   ];
 };
+
+export const generateToken = (id, options) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, options);
+};
+

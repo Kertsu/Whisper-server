@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { error, success } from "../utils/httpResponse.js";
 import User from "../models/userModel.js";
 import { sendOTP } from "../utils/mailer.js";
+import { generateToken } from "../utils/helpers.js";
 
 const destroySession = (req, res, next, message = null) => {
   req.logout((err) => {
@@ -39,7 +40,6 @@ const logout = asyncHandler(async (req, res, next) => {
 
 const login = asyncHandler(async (req, res, next) => {
   const { email, password } = req.body;
-  console.log(req.body);
 
   const user = await User.findOne({
     email,
@@ -54,11 +54,14 @@ const login = asyncHandler(async (req, res, next) => {
     return error(res, null, "Invalid credentials", 401);
   }
 
-  req.login(user, (err) => {
-    if (err) {
-      return next(err);
-    }
-    return success(res, { user, otp: user.emailVerifiedAt ? false : true });
+  const userData = {
+    ...user.toObject(),
+    token: generateToken(user._id, { expiresIn: "1d" }),
+  };
+
+  return success(res, {
+    user: userData,
+    otp: user.emailVerifiedAt ? false : true,
   });
 });
 
@@ -81,12 +84,7 @@ const register = asyncHandler(async (req, res, next) => {
 
     sendOTP({ email, name: username });
 
-    req.login(newUser, (err) => {
-      if (err) {
-        return next(err);
-      }
-      return success(res, { user: newUser }, "OTP sent to your email");
-    });
+    return success(res, { user: newUser }, "OTP sent to your email");
   } catch (error) {
     return error(res, null, "Internal Server Error", 500);
   }
@@ -127,11 +125,11 @@ const verifyOTP = asyncHandler(async (req, res, next) => {
     return error(res, null, "Email already verified", 409);
   }
 
-  if (user.verification.expiresAt < Date.now()) {
-    return error(res, null, "OTP expired", 401);
-  }
-
   if (await bcrypt.compare(otp, user.verification.code)) {
+    if (user.verification.expiresAt < Date.now()) {
+      return error(res, null, "OTP expired", 401);
+    }
+
     user.emailVerifiedAt = Date.now();
     user.verification = undefined;
 
@@ -176,7 +174,7 @@ const validateUsername = asyncHandler(async (req, res, next) => {
 
 const checkAuth = asyncHandler(async (req, res, next) => {
   res.json({
-    isAuthenticated: req.isAuthenticated(),
+    isAuthenticated: true,
   });
 });
 

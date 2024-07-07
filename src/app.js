@@ -2,7 +2,6 @@ import helmet from "helmet";
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import session from "express-session";
 import passport from "../config/passport.js";
 import userRouter from "./routes/userRoutes.js";
 import http from "http";
@@ -11,7 +10,6 @@ import { success } from "./utils/httpResponse.js";
 import { connect } from "../config/db.js";
 import { addNewUser, removeUser } from "./utils/socketManager.js";
 import conversationRouter from "./routes/conversationRoutes.js";
-import MongoStore from "connect-mongo";
 
 dotenv.config();
 
@@ -48,27 +46,7 @@ app.use(
   })
 );
 
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: true,
-    cookie: {
-      secure: process.env.NODE_ENV === 'production',
-      httpOnly: true,
-      sameSite: 'none', 
-      maxAge: 24 * 60 * 60 * 1000, 
-      domain: 'onrender.com' 
-    },
-    store: MongoStore.create({
-      mongoUrl: process.env.MONGO_URI,
-      collectionName: 'sessions'
-    })
-  })
-);
-
 app.use(passport.initialize());
-app.use(passport.session());
 
 connect();
 

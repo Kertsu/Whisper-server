@@ -54,7 +54,7 @@ const sendOTP = async (data) => {
         <div style="padding:.5rem 1.5rem; color: #24292e; border-radius: 6px; border:1px #cccccc solid; margin-bottom: 1rem !important; display: flex !important; align-items: center; width: max-content; justify-content:space-between;"><h3 style="margin: 0 !important;">${verificationCode}</h3>
         </div>
         `,
-      outro: `<p style="font-size: 14px; color: #24292e; margin-bottom: 1rem !important;">If you have any questions, please feel free to contact me at <a href="mailto:kurtddbigtas@gmail.com>kurtddaniel@gmail.com</a>"</p>`,
+      outro: `<p style="font-size: 14px; color: #24292e; margin-bottom: 1rem !important;">If you have any questions, please feel free to contact me at <a href="mailto:kurtddbigtas@gmail.com">kurtddaniel@gmail.com</a></p>`,
     },
   };
 

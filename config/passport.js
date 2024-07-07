@@ -27,13 +27,13 @@ passport.use(
               username: profile.displayName,
               avatar: profile.photos[0].value,
               verification: undefined,
-              emailVerifiedAt: Date.now()
+              emailVerifiedAt: Date.now(),
             });
           } else {
             user.avatar = user.avatar ? user.avatar : profile.photos[0].value;
             user.googleId = profile.id;
-            user.emailVerifiedAt = Date.now()
-            user.verification = undefined
+            user.emailVerifiedAt = Date.now();
+            user.verification = undefined;
             await user.save();
           }
         }

@@ -17,11 +17,9 @@ import {
 
 const userRouter = express.Router();
 
-userRouter.get("/auth/check", checkAuth);
+userRouter.get("/auth/check", isAuthenticated, checkAuth);
 
 userRouter.get("/@me", isVerifiedAndAuthenticated, getSelf);
-
-userRouter.get("/logout", isAuthenticated, logout);
 
 userRouter.post("/login", login);
 
@@ -31,12 +29,14 @@ userRouter.post("/resend-otp", isAuthenticated, resendOTP);
 
 userRouter.post("/verify", isAuthenticated, verifyOTP);
 
-userRouter.delete("/self/delete", isVerifiedAndAuthenticated, deleteSelf);
-
 userRouter.post(
   "/validate/:username",
   isVerifiedAndAuthenticated,
   validateUsername
 );
 
+
+userRouter.delete("/self/delete", isVerifiedAndAuthenticated, deleteSelf);
+
+userRouter.get("/logout", isAuthenticated, logout);
 export default userRouter;
