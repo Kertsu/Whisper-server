@@ -17,7 +17,13 @@ dotenv.config();
 
 const app = express();
 const httpServer = http.createServer(app);
-const io = new Server(httpServer);
+const io = new Server(httpServer, {
+  cors: {
+    origin: 'http://localhost:4200',
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+  }
+});
 
 const allowedOrigins = [
   process.env.APP_URL, process.env.SERVICE_URL
