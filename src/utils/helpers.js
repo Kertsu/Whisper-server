@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import Conversation from "../models/conversationsModel.js";
-import jwt from 'jsonwebtoken'
+import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 
 const generateRandomString = (length) => {
   const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -75,3 +76,13 @@ export const generateToken = (id, options) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, options);
 };
 
+export const hasher = async (anything) => {
+  const salt = await bcrypt.genSalt(10);
+  const hashed = await bcrypt.hash(anything, salt);
+
+  return hashed;
+};
+
+export const compareHash = async (input, value) => {
+  return await bcrypt.compare(input, value);
+};

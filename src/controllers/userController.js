@@ -2,7 +2,7 @@ import asyncHandler from "express-async-handler";
 import { error, success } from "../utils/httpResponse.js";
 import User from "../models/userModel.js";
 import { sendVerificationLink } from "../utils/mailer.js";
-import { generateToken } from "../utils/helpers.js";
+import { compareHash, generateToken } from "../utils/helpers.js";
 import jwt from "jsonwebtoken";
 import { isAuthenticated } from "../middlewares/authMiddleware.js";
 
@@ -92,7 +92,7 @@ const register = asyncHandler(async (req, res, next) => {
 
     const token = generateToken(newUser._id, { expiresIn: 300 });
 
-    sendVerificationLink({ email, name: username, token });
+    sendVerificationLink({ email, name: username, token, id: newUser._id });
 
     return success(res, { user: newUser }, "Please verify your email");
   } catch (error) {
@@ -101,43 +101,68 @@ const register = asyncHandler(async (req, res, next) => {
 });
 
 const resendVerificationLink = asyncHandler(async (req, res) => {
-  const user = await User.findOne({ email: req.body.email });
+  const { id, email } = req.body;
 
-  if (!user) {
-    return res.status(400).json({
-      success: false,
-      error: "User not found",
+  try {
+    const user = await User.findById(id);
+
+    if (!user) {
+      return error(res, null, "User not found", 404);
+    }
+
+    if (!(await compareHash(user.email, email))) {
+      return error(res, null, "Email does not match", 400);
+    }
+
+    if (user.emailVerifiedAt) {
+      return error(res, null, "Email already verified", 409);
+    }
+
+    const newToken = generateToken(user._id, { expiresIn: 300 });
+
+    sendVerificationLink({
+      email: user.email,
+      name: user.username,
+      token: newToken,
+      id: user._id,
     });
+
+    return success(res, null, "Verification link resent to your email");
+  } catch (err) {
+    return error(res, null, "Invalid token", 400);
   }
-
-  if (user.emailVerifiedAt) {
-    return error(res, null, "Email already verified", 409);
-  }
-
-  const token = generateToken(user._id, { expiresIn: 300 });
-
-  sendVerificationLink({ email: user.email, name: user.username, token });
-
-  return success(res, null, "Link was sent to your email");
 });
 
 const verifyEmail = asyncHandler(async (req, res, next) => {
-  const { token } = req.body;
+  const { token, id, email } = req.body;
+
+  if (!token || !email || !id) {
+    return error(res, null, "Invalid credentials", 400);
+  }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select("-password");
+    const user = await User.findById(id).select("-password");
 
     if (!user) {
+      return error(res, null, "User not found", 404);
+    }
+
+    if (user.emailVerifiedAt) {
+      return error(res, null, "Email already verified", 409);
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (!user._id.equals(id) || !(await compareHash(user.email, email))) {
       return error(res, null, "Invalid token", 400);
     }
+
+    user.emailVerifiedAt = new Date();
+    await user.save();
 
     const newToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1d",
     });
-
-    user.emailVerifiedAt = new Date();
-    await user.save();
 
     return success(
       res,
@@ -145,7 +170,7 @@ const verifyEmail = asyncHandler(async (req, res, next) => {
       "Email verified and user logged in"
     );
   } catch (err) {
-    console.error(err);
+    console.error(err, "ln173");
     return error(res, null, "Invalid or expired token", 400);
   }
 });
@@ -178,7 +203,6 @@ const checkAuth = asyncHandler(async (req, res, next) => {
       });
     }
   } catch (err) {
-    console.log(err);
     res.json({
       isAuthenticated: false,
     });

@@ -36,7 +36,6 @@ const checkAuth = async (req, res, next, callback = null) => {
         return next();
       }
     } catch (err) {
-      console.log(err);
       if (!res.headersSent) {
         return error(res, null, "Token invalid. Please log in again.", 401);
       }
