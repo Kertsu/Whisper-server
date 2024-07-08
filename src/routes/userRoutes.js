@@ -5,8 +5,9 @@ import {
   getSelf,
   login,
   logout,
+  onboard,
   register,
-  resendOTP,
+  resendVerificationLink,
   validateUsername,
   verifyEmail,
 } from "../controllers/userController.js";
@@ -25,7 +26,7 @@ userRouter.post("/login", login);
 
 userRouter.post("/register", register);
 
-userRouter.post("/resend-otp", isAuthenticated, resendOTP);
+userRouter.post("/verify/resend", resendVerificationLink);
 
 userRouter.post("/verify", verifyEmail);
 
@@ -34,5 +35,7 @@ userRouter.post("/validate/:username", isVerifiedAndAuthenticated, validateUsern
 userRouter.delete("/self/delete", isVerifiedAndAuthenticated, deleteSelf);
 
 userRouter.get("/logout", isAuthenticated, logout);
+
+userRouter.patch('/onboard', isVerifiedAndAuthenticated, onboard)
 
 export default userRouter;

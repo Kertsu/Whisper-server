@@ -3,7 +3,8 @@ import { error, success } from "../utils/httpResponse.js";
 import User from "../models/userModel.js";
 import { sendVerificationLink } from "../utils/mailer.js";
 import { generateToken } from "../utils/helpers.js";
-import jwt from 'jsonwebtoken'
+import jwt from "jsonwebtoken";
+import { isAuthenticated } from "../middlewares/authMiddleware.js";
 
 const getSelf = asyncHandler(async (req, res, next) => {
   try {
@@ -89,7 +90,7 @@ const register = asyncHandler(async (req, res, next) => {
       password,
     });
 
-    const token = generateToken(newUser._id, {expiresIn: '1hr'})
+    const token = generateToken(newUser._id, { expiresIn: 300 });
 
     sendVerificationLink({ email, name: username, token });
 
@@ -99,8 +100,8 @@ const register = asyncHandler(async (req, res, next) => {
   }
 });
 
-const resendOTP = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id);
+const resendVerificationLink = asyncHandler(async (req, res) => {
+  const user = await User.findOne({ email: req.body.email });
 
   if (!user) {
     return res.status(400).json({
@@ -113,35 +114,39 @@ const resendOTP = asyncHandler(async (req, res) => {
     return error(res, null, "Email already verified", 409);
   }
 
-  sendOTP({ email: user.email, name: user.username });
+  const token = generateToken(user._id, { expiresIn: 300 });
 
-  return success(
-    res,
-    null,
-    "OTP has been sent successfully. Please check your email for the code."
-  );
+  sendVerificationLink({ email: user.email, name: user.username, token });
+
+  return success(res, null, "Link was sent to your email");
 });
 
 const verifyEmail = asyncHandler(async (req, res, next) => {
   const { token } = req.body;
- 
+
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).select('-password');
+    const user = await User.findById(decoded.id).select("-password");
 
     if (!user) {
-      return error(res, null, 'Invalid token', 400);
+      return error(res, null, "Invalid token", 400);
     }
 
-    const newToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const newToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "1d",
+    });
 
     user.emailVerifiedAt = new Date();
-    await user.save()
+    await user.save();
 
-    return success(res, { token: newToken, user }, 'Email verified and user logged in');
+    return success(
+      res,
+      { token: newToken, user },
+      "Email verified and user logged in"
+    );
   } catch (err) {
     console.error(err);
-    return error(res, null, 'Invalid or expired token', 400);
+    return error(res, null, "Invalid or expired token", 400);
   }
 });
 
@@ -162,9 +167,35 @@ const validateUsername = asyncHandler(async (req, res, next) => {
 });
 
 const checkAuth = asyncHandler(async (req, res, next) => {
-  res.json({
-    isAuthenticated: req.user ? true : false,
-  });
+  try {
+    const token = req.headers.authorization.split(" ")[1];
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (decoded) {
+      res.json({
+        isAuthenticated: true,
+      });
+    }
+  } catch (err) {
+    console.log(err);
+    res.json({
+      isAuthenticated: false,
+    });
+  }
+});
+
+const onboard = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select("-password");
+
+  if (!user) {
+    return error(res, null, "User not found", 404);
+  }
+
+  user.hasOnboard = true;
+  await user.save();
+
+  return success(res, { user }, "User onboarded successfully");
 });
 
 export {
@@ -172,9 +203,10 @@ export {
   logout,
   login,
   register,
-  resendOTP,
+  resendVerificationLink,
   verifyEmail,
   deleteSelf,
   validateUsername,
   checkAuth,
+  onboard,
 };
