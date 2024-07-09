@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import Conversation from "./conversationsModel.js";
+import Message from "./messageModel.js";
 
 const userSchema = new mongoose.Schema(
   {
@@ -25,6 +27,28 @@ userSchema.pre("save", async function (next) {
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
   next();
+});
+
+userSchema.pre("findOneAndDelete", async function (next) {
+  try {
+    const userId = this.getQuery()._id;
+
+    await Conversation.updateMany(
+      { initiator: userId },
+      { $set: { initiator: null } }
+    );
+
+    await Conversation.updateMany(
+      { recipient: userId },
+      { $set: { recipient: null } }
+    );
+
+    await Message.updateMany({ sender: userId }, { $set: { sender: null } });
+
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
 userSchema.methods.matchPassword = async function (enteredPassword) {

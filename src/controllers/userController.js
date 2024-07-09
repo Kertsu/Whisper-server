@@ -38,11 +38,11 @@ const deleteSelf = asyncHandler(async (req, res, next) => {
       return error(res, null, "User not found", 404);
     }
 
-    await user.deleteOne();
+    await User.findOneAndDelete({ _id: req.user._id });
 
     return success(res, null, "Account deleted successfully");
-  } catch (error) {
-    return error(res, error, "Failed to delete user", 500);
+  } catch (err) {
+    return error(res, null, "Failed to delete user", 500);
   }
 });
 
@@ -226,7 +226,7 @@ const validateToken = asyncHandler(async (req, res) => {
   const { token } = req.body;
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    if (decoded){
+    if (decoded) {
       return success(res, null, "Token is valid");
     }
   } catch (err) {
@@ -245,5 +245,5 @@ export {
   validateUsername,
   checkAuth,
   onboard,
-  validateToken
+  validateToken,
 };

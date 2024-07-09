@@ -5,12 +5,10 @@ const conversationSchema = new mongoose.Schema(
     initiator: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
     },
     recipient: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
     },
     initiatorUsername: {
       type: String,
