@@ -103,4 +103,37 @@ const sendResetPasswordLink = async (data) => {
   }
 };
 
-export { sendVerificationLink, sendResetPasswordLink };
+const sendPasswordResetSuccess = async (data) => {
+  let { mailGenerator } = setupTransporterAndMailGen();
+  const { name, email } = data;
+
+  const hashedEmail = await hasher(email);
+  var emailMessage = {
+    body: {
+      name,
+      intro: `<p style="font-size: 14px; color: #24292e; margin-bottom: 1rem !important;">Your password has been successfully changed. You can now log in to your account with your new password.</p> `,
+      outro: `<p style="font-size: 14px; color: #24292e; margin-bottom: 1rem !important;">If you have any questions, please feel free to contact me at <a href="mailto:kurtddbigtas@gmail.com">kurtddaniel@gmail.com</a></p>`,
+    },
+  };
+
+  let mail = mailGenerator.generate(emailMessage);
+
+  let message = {
+    from: process.env.nmEMAIL,
+    to: email,
+    subject: "[Whisper] Password Changed",
+    html: mail,
+  };
+
+  try {
+    await sendEmail(message);
+  } catch (err) {
+    throw new Error("An error occurred: " + err);
+  }
+};
+
+export {
+  sendVerificationLink,
+  sendResetPasswordLink,
+  sendPasswordResetSuccess,
+};

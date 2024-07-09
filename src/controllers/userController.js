@@ -2,6 +2,7 @@ import asyncHandler from "express-async-handler";
 import { error, success } from "../utils/httpResponse.js";
 import User from "../models/userModel.js";
 import {
+  sendPasswordResetSuccess,
   sendResetPasswordLink,
   sendVerificationLink,
 } from "../utils/mailer.js";
@@ -86,11 +87,12 @@ const register = asyncHandler(async (req, res, next) => {
   }
 
   try {
+    const hashedPassword = await hasher(password);
     const username = email.split("@")[0];
     const newUser = await User.create({
       email,
       username,
-      password,
+      password: hashedPassword,
     });
 
     const token = generateToken(newUser._id, { expiresIn: 300 });
@@ -98,7 +100,7 @@ const register = asyncHandler(async (req, res, next) => {
     sendVerificationLink({ email, name: username, token, id: newUser._id });
 
     return success(res, { user: newUser }, "Please verify your email");
-  } catch (error) {
+  } catch (err) {
     return error(res, null, "Internal Server Error", 500);
   }
 });
@@ -250,6 +252,10 @@ const forgotPassword = asyncHandler(async (req, res) => {
     return error(res, null, "Your email hasn't been registered", 404);
   }
 
+  if (!user.password) {
+    return error(res, null, "Registered via OAuth", 404);
+  }
+
   try {
     const token = crypto.randomBytes(32).toString("hex");
 
@@ -264,11 +270,11 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
     user.passwordReset.token = hashedToken;
     user.passwordReset.expiresAt = Date.now() + 10 * 60 * 1000;
-    await user.save()
+    await user.save();
 
-    return success(res, null, 'Password reset link sent')
+    return success(res, null, "Password reset link sent");
   } catch (err) {
-    console.log(err)
+    console.log(err);
     return error(res, null, "Invalid user data");
   }
 });
@@ -276,7 +282,49 @@ const forgotPassword = asyncHandler(async (req, res) => {
 /**
  * @todo reset password
  */
-const resetPassword = asyncHandler(async (req, res) => {});
+const resetPassword = asyncHandler(async (req, res) => {
+  const { token, id } = req.params;
+  const { password, confirmPassword } = req.body;
+
+  console.log(password, confirmPassword);
+  console.log(token, id);
+
+  const user = await User.findById(id);
+
+  if (!user) {
+    return error(res, null, "User not found", 404);
+  }
+
+  const { passwordReset, email, username } = user;
+  const tokenValid = await compareHash(token, passwordReset.token);
+  const tokenExpired = passwordReset.expiresAt < Date.now();
+
+  if (!tokenValid) {
+    return error(res, null, "Invalid reset token", 403);
+  }
+
+  if (tokenExpired) {
+    return error(res, null, "Reset token has expired", 403);
+  }
+
+  if (password !== confirmPassword) {
+    return error(res, null, "Passwords do not match", 400);
+  }
+
+  const hashedPassword = await hasher(password);
+  user.password = hashedPassword;
+  user.passwordChangedAt = Date.now();
+  user.passwordReset = undefined;
+
+  try {
+    sendPasswordResetSuccess({ name: user.username, email: user.email });
+    await user.save();
+    return success(res, null, "Password reset successfully");
+  } catch (err) {
+    console.log(err);
+    return error(res, null, "Failed to reset password", 500);
+  }
+});
 
 export {
   getSelf,
