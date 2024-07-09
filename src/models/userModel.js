@@ -5,16 +5,46 @@ import Message from "./messageModel.js";
 
 const userSchema = new mongoose.Schema(
   {
-    username: { type: String, required: true, unique: true },
-    email: { type: String, unique: true },
-    password: { type: String },
-    googleId: { type: String, unique: true, sparse: true },
-    facebookId: { type: String, unique: true, sparse: true },
-    avatar: { type: String },
-    hasOnboard: { type: Boolean, default: false },
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    email: {
+      type: String,
+      unique: true,
+    },
+    password: {
+      type: String,
+    },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+    facebookId: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+    avatar: {
+      type: String,
+    },
+    hasOnboard: {
+      type: Boolean,
+      default: false,
+    },
     emailVerifiedAt: {
       type: Date,
       default: null,
+    },
+    passwordReset: {
+      token: {
+        type: String,
+      },
+      expiresAt: {
+        type: Date,
+      },
     },
   },
   { timestamps: true }

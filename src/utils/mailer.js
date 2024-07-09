@@ -70,4 +70,37 @@ const sendVerificationLink = async (data) => {
   }
 };
 
-export { sendVerificationLink };
+const sendResetPasswordLink = async (data) => {
+  let { mailGenerator } = setupTransporterAndMailGen();
+
+  const { name, id, email, token } = data;
+
+  var emailMessage = {
+    body: {
+      name,
+      intro: `<p style="font-size: 14px; color: #24292e; margin-bottom: 1rem !important;">You recently requested a password reset for your account. Please click the button shown below to reset your password. If you don’t use this link within 10 minutes, it will expire. To get a new password reset link, visit: <a href="${link}/auth/forgot_password">${link}/auth/forgot_password</a></p> 
+        
+        <a style="padding: 0.5rem 1.5rem; color: white; background-color:#3b82f6; text-decoration:none; border-radius: 6px; border: 1px solid #3B82F6; width: max-content;display: block;margin-bottom: 1rem !important;" href="${link}/auth/reset_password/${token}/${id}" target="_blank">Reset Password</a>
+
+        `,
+      outro: `<p style="font-size: 14px; color: #24292e; margin-bottom: 1rem !important;">If you did not initiate this request or have any concerns, please contact me immediately at <a href="mailto:kurtddbigtas@gmail.com">kurtddaniel@gmail.com</a></p>`,
+    },
+  };
+
+  let mail = mailGenerator.generate(emailMessage);
+
+  let message = {
+    from: process.env.nmEMAIL,
+    to: email,
+    subject: "[Whisper] Reset Password",
+    html: mail,
+  };
+
+  try {
+    await sendEmail(message);
+  } catch (err) {
+    throw new Error("An error occurred: " + err);
+  }
+};
+
+export { sendVerificationLink, sendResetPasswordLink };

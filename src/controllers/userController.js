@@ -1,10 +1,13 @@
 import asyncHandler from "express-async-handler";
 import { error, success } from "../utils/httpResponse.js";
 import User from "../models/userModel.js";
-import { sendVerificationLink } from "../utils/mailer.js";
-import { compareHash, generateToken } from "../utils/helpers.js";
+import {
+  sendResetPasswordLink,
+  sendVerificationLink,
+} from "../utils/mailer.js";
+import { compareHash, generateToken, hasher } from "../utils/helpers.js";
 import jwt from "jsonwebtoken";
-import { isAuthenticated } from "../middlewares/authMiddleware.js";
+import crypto from "crypto";
 
 const getSelf = asyncHandler(async (req, res, next) => {
   try {
@@ -234,6 +237,47 @@ const validateToken = asyncHandler(async (req, res) => {
   }
 });
 
+const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return error(res, null, "Missing required fields", 400);
+  }
+
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    return error(res, null, "Your email hasn't been registered", 404);
+  }
+
+  try {
+    const token = crypto.randomBytes(32).toString("hex");
+
+    sendResetPasswordLink({
+      name: user.username,
+      id: user._id,
+      email: user.email,
+      token,
+    });
+
+    const hashedToken = await hasher(token);
+
+    user.passwordReset.token = hashedToken;
+    user.passwordReset.expiresAt = Date.now() + 10 * 60 * 1000;
+    await user.save()
+
+    return success(res, null, 'Password reset link sent')
+  } catch (err) {
+    console.log(err)
+    return error(res, null, "Invalid user data");
+  }
+});
+
+/**
+ * @todo reset password
+ */
+const resetPassword = asyncHandler(async (req, res) => {});
+
 export {
   getSelf,
   logout,
@@ -246,4 +290,6 @@ export {
   checkAuth,
   onboard,
   validateToken,
+  forgotPassword,
+  resetPassword,
 };
