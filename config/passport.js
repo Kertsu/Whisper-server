@@ -57,7 +57,6 @@ passport.use(
       try {
         const { id, displayName, name, username } = profile;
         let newUserUn;
-        console.log(profile);
         if (!username) {
           newUserUn = displayName.split(" ")[0];
         }

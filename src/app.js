@@ -80,10 +80,13 @@ app.get("/auth/facebook", passport.authenticate("facebook"));
 
 app.get(
   "/auth/facebook/callback",
-  passport.authenticate("facebook", { failureRedirect: redirectUri }),
+  passport.authenticate("facebook", {
+    failureRedirect: redirectUri,
+    session: false,
+  }),
   (req, res) => {
-    console.log("Authenticated user:", req.user);
-    res.redirect(`${process.env.APP_URL}/whisper/whisps`);
+    const token = generateToken(req.user._id, { expiresIn: "1d" });
+    res.redirect(`${redirectUri}/auth/callback?t=${token}`);
   }
 );
 

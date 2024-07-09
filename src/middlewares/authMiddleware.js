@@ -8,7 +8,7 @@ export const isAuthenticated = async (req, res, next) => {
 
 export const isVerifiedAndAuthenticated = async (req, res, next) => {
   await checkAuth(req, res, next, () => {
-    if (!req.user.emailVerifiedAt) {
+    if (!req.user.emailVerifiedAt && !req.user.facebookId) {
       return error(res, null, "Email not yet verified", 401);
     }
   });
