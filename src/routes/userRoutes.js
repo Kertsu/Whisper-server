@@ -8,6 +8,7 @@ import {
   onboard,
   register,
   resendVerificationLink,
+  validateToken,
   validateUsername,
   verifyEmail,
 } from "../controllers/userController.js";
@@ -37,5 +38,7 @@ userRouter.delete("/self/delete", isVerifiedAndAuthenticated, deleteSelf);
 userRouter.get("/logout", isAuthenticated, logout);
 
 userRouter.patch('/onboard', isVerifiedAndAuthenticated, onboard)
+
+userRouter.post('/token/validate', validateToken)
 
 export default userRouter;

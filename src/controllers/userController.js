@@ -222,6 +222,18 @@ const onboard = asyncHandler(async (req, res) => {
   return success(res, { user }, "User onboarded successfully");
 });
 
+const validateToken = asyncHandler(async (req, res) => {
+  const { token } = req.body;
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (decoded){
+      return success(res, null, "Token is valid");
+    }
+  } catch (err) {
+    return error(res, null, "Invalid token", 403);
+  }
+});
+
 export {
   getSelf,
   logout,
@@ -233,4 +245,5 @@ export {
   validateUsername,
   checkAuth,
   onboard,
+  validateToken
 };

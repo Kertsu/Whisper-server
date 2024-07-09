@@ -10,6 +10,7 @@ import { success } from "./utils/httpResponse.js";
 import { connect } from "../config/db.js";
 import { addNewUser, removeUser } from "./utils/socketManager.js";
 import conversationRouter from "./routes/conversationRoutes.js";
+import { generateToken } from "./utils/helpers.js";
 
 dotenv.config();
 
@@ -20,12 +21,10 @@ const io = new Server(httpServer, {
     origin: process.env.APP_URL,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
-  }
+  },
 });
 
-const allowedOrigins = [
-  process.env.APP_URL, process.env.SERVICE_URL
-];
+const allowedOrigins = [process.env.APP_URL, process.env.SERVICE_URL];
 
 app.use((req, res, next) => {
   req.io = io;
@@ -67,10 +66,13 @@ app.get(
 
 app.get(
   "/auth/google/callback",
-  passport.authenticate("google", { failureRedirect: redirectUri }),
+  passport.authenticate("google", {
+    failureRedirect: redirectUri,
+    session: false,
+  }),
   (req, res) => {
-    console.log('Authenticated user:', req.user);
-    res.redirect(`${process.env.APP_URL}/whisper/whisps`);
+    const token = generateToken(req.user._id, { expiresIn: "1d" });
+    res.redirect(`${redirectUri}/auth/callback?t=${token}`);
   }
 );
 
@@ -80,7 +82,7 @@ app.get(
   "/auth/facebook/callback",
   passport.authenticate("facebook", { failureRedirect: redirectUri }),
   (req, res) => {
-    console.log('Authenticated user:', req.user);
+    console.log("Authenticated user:", req.user);
     res.redirect(`${process.env.APP_URL}/whisper/whisps`);
   }
 );
