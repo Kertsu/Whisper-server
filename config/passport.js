@@ -20,12 +20,13 @@ passport.use(
 
         if (!user) {
           user = await User.findOne({ email: profile.emails[0].value });
-          const generatedUsername = await generateRandomUsername();
+          // const generatedUsername = await generateRandomUsername();
+          const username = profile.emails[0].value.split('@')[0]
           if (!user) {
             user = await User.create({
               googleId: profile.id,
               email: profile.emails[0].value,
-              username: generatedUsername,
+              username,
               avatar: profile.photos[0].value,
               verification: undefined,
               emailVerifiedAt: Date.now(),
