@@ -93,18 +93,26 @@ app.get(
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/conversations", conversationRouter);
 
-io.on("connection", (socket) => {
-  socket.on("disconnect", () => {
-    removeUser(socket.id);
-  });
+  io.on("connection", (socket) => {
+    socket.on("disconnect", () => {
+      removeUser(socket.id);
+    });
 
-  socket.on("live", (data) => {
-    addNewUser(data, socket.id);
-  });
+    socket.on("live", (data) => {
+      addNewUser(data, socket.id);
+    });
 
-  socket.on("die", () => {
-    removeUser(socket.id);
+    socket.on("die", () => {
+      removeUser(socket.id);
+    });
+
+    socket.on('typing', (data) => {
+      io.emit(`typing.${data.conversationId}`, data);
+    })
+
+    socket.on('stopTyping', (data) => {
+      io.emit(`stopTyping.${data.conversationId}`, data);
+    })
   });
-});
 
 export { app, httpServer };
