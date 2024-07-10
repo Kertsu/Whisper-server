@@ -2,6 +2,7 @@ import crypto from "crypto";
 import Conversation from "../models/conversationsModel.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import User from "../models/userModel.js";
 
 const generateRandomString = (length) => {
   const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -21,6 +22,15 @@ export const generateInitiatorUsername = async () => {
 
   return randomUsername;
 };
+
+export const generateRandomUsername = async() => {
+  let randomUsername;
+  do {
+    randomUsername = "User_" + generateRandomString(8);
+  } while (await User.findOne({ username: randomUsername }));
+
+  return randomUsername;
+}
 
 export const buildConversationPipeline = (matchCondition) => {
   return [

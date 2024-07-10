@@ -3,6 +3,7 @@ import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as FacebookStrategy } from "passport-facebook";
 import User from "../src/models/userModel.js";
 import dotenv from "dotenv";
+import { generateRandomUsername } from "../src/utils/helpers.js";
 
 dotenv.config();
 
@@ -19,12 +20,12 @@ passport.use(
 
         if (!user) {
           user = await User.findOne({ email: profile.emails[0].value });
-
+          const generatedUsername = await generateRandomUsername();
           if (!user) {
             user = await User.create({
               googleId: profile.id,
               email: profile.emails[0].value,
-              username: profile.displayName,
+              username: generatedUsername,
               avatar: profile.photos[0].value,
               verification: undefined,
               emailVerifiedAt: Date.now(),
@@ -56,17 +57,14 @@ passport.use(
     async (accessToken, refreshToken, profile, done) => {
       try {
         const { id, displayName, name, username } = profile;
-        let newUserUn;
-        if (!username) {
-          newUserUn = displayName.split(" ")[0];
-        }
+        const generatedUsername = await generateRandomUsername();
 
         let user = await User.findOne({ facebookId: id });
 
         if (!user) {
           user = await User.create({
             facebookId: id,
-            username: newUserUn,
+            username: generatedUsername,
           });
         }
 
