@@ -279,15 +279,9 @@ const forgotPassword = asyncHandler(async (req, res) => {
   }
 });
 
-/**
- * @todo reset password
- */
 const resetPassword = asyncHandler(async (req, res) => {
   const { token, id } = req.params;
   const { password, confirmPassword } = req.body;
-
-  console.log(password, confirmPassword);
-  console.log(token, id);
 
   const user = await User.findById(id);
 
@@ -326,6 +320,33 @@ const resetPassword = asyncHandler(async (req, res) => {
   }
 });
 
+const validateResetPasswordLink = asyncHandler(async (req, res) => {
+  const { token, id } = req.params;
+
+  const errorMessage =
+    "It appears that the password reset link you clicked on is invalid. Please try again.";
+  try {
+    const user = await User.findById(id);
+
+    if (!user || !user.passwordReset || !user.passwordReset.token) {
+      return error(res, null, errorMessage, 400);
+    }
+    const { passwordReset } = user;
+
+    const tokenValid = await compareHash(token, passwordReset.token);
+    const tokenExpired = passwordReset.expiresAt < Date.now();
+
+    if (!passwordReset || !user || !tokenValid || tokenExpired) {
+      return error(res, null, errorMessage, 400);
+    }
+
+    return success(res, null, "Reset token is valid");
+  } catch (err) {
+    console.log(err);
+    return error(res, null, errorMessage);
+  }
+});
+
 export {
   getSelf,
   logout,
@@ -340,4 +361,5 @@ export {
   validateToken,
   forgotPassword,
   resetPassword,
+  validateResetPasswordLink,
 };
