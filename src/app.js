@@ -49,7 +49,7 @@ app.use(passport.initialize());
 
 connect();
 
-const redirectUri = process.env.REDIRECT_URI;
+const redirectUri = process.env.APP_URL;
 
 app.get("/", (req, res) => {
   res.send(`<h1>Kurtd Daniel Bigtas owns this.</h1>`);
