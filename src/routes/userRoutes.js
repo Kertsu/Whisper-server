@@ -10,6 +10,7 @@ import {
   register,
   resendVerificationLink,
   resetPassword,
+  updatePassword,
   validateResetPasswordLink,
   validateToken,
   validateUsername,
@@ -51,5 +52,7 @@ userRouter.post("/token/validate", validateToken);
 userRouter.post("/forgot_password", forgotPassword);
 
 userRouter.route('/reset_password/:token/:id').get(validateResetPasswordLink).patch(resetPassword);
+
+userRouter.patch('/update_password', isVerifiedAndAuthenticated, updatePassword)
 
 export default userRouter;

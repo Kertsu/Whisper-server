@@ -347,6 +347,33 @@ const validateResetPasswordLink = asyncHandler(async (req, res) => {
   }
 });
 
+const updatePassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword, confirmPassword } = req.body;
+  const user = await User.findById(req.user._id);
+  if (!user) {
+    return error(res, null, "User not found", 404);
+  }
+
+  if(!user.password){
+    return error(res, null, "Account registered via OAuth", 400);
+  }
+
+  if (!(await compareHash(oldPassword, user.password))){
+    return error(res, null, "Invalid old password", 401);
+  }
+
+  if (newPassword !== confirmPassword) {
+    return error(res, null, "Passwords do not match", 400);
+  }
+
+  const hashedPassword = await hasher(newPassword);
+  user.password = hashedPassword;
+  await user.save();
+
+  return success(res, null, "Password updated successfully");
+
+});
+
 export {
   getSelf,
   logout,
@@ -362,4 +389,5 @@ export {
   forgotPassword,
   resetPassword,
   validateResetPasswordLink,
+  updatePassword,
 };
