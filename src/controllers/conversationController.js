@@ -196,7 +196,19 @@ const markMessageAsRead = asyncHandler(async (req, res, next) => {
     return error(res, null, "Message not found", 404);
   }
 
-  message.readAt = Date.now();
+  const now = Date.now();
+
+  await Message.updateMany(
+    {
+      conversation: conversationId,
+      sender: { $ne: requestingUserId },
+      readAt: null,
+      createdAt: { $lte: message.createdAt },
+    },
+    { readAt: now }
+  );
+
+  message.readAt = now;
   await message.save();
 
   req.io.emit(`read.${conversation._id}`, { message });
@@ -285,12 +297,12 @@ const getConversation = asyncHandler(async (req, res) => {
         recipient: requestingUserId,
       },
     ],
-  });
+  }).populate("recipient");
   if (!conversation) {
     return error(res, null, "Conversation not found", 404);
   }
 
-  return success(res, {conversation})
+  return success(res, { conversation });
 });
 
 export {
@@ -300,5 +312,5 @@ export {
   updateMessage,
   markMessageAsRead,
   initiateConversation,
-  getConversation
+  getConversation,
 };

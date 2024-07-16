@@ -23,14 +23,14 @@ export const generateInitiatorUsername = async () => {
   return randomUsername;
 };
 
-export const generateRandomUsername = async() => {
+export const generateRandomUsername = async () => {
   let randomUsername;
   do {
     randomUsername = "User_" + generateRandomString(8);
   } while (await User.findOne({ username: randomUsername }));
 
   return randomUsername;
-}
+};
 
 export const buildConversationPipeline = (matchCondition) => {
   return [
@@ -63,7 +63,7 @@ export const buildConversationPipeline = (matchCondition) => {
       $project: {
         _id: 1,
         initiator: 1,
-        recipient: { _id: 1, username: 1 },
+        recipient: { _id: 1, username: 1, avatar: 1 },
         initiatorUsername: 1,
         latestMessage: {
           _id: 1,
