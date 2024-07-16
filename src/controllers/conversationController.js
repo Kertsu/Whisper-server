@@ -78,7 +78,9 @@ const getMessages = asyncHandler(async (req, res, next) => {
     conversation: conversationId,
     sender: { $ne: requestingUserId },
     readAt: null,
-  }).sort({ createdAt: -1 }).populate('conversation');
+  })
+    .sort({ createdAt: -1 })
+    .populate("conversation");
 
   if (latestMessage) {
     await Message.updateMany(
@@ -91,8 +93,8 @@ const getMessages = asyncHandler(async (req, res, next) => {
       { readAt: new Date() }
     );
 
-    const message = latestMessage
-    console.log(message)
+    const message = latestMessage;
+    console.log(message);
 
     req.io.emit(`read.${conversation._id}`, { message });
   }
@@ -188,7 +190,7 @@ const markMessageAsRead = asyncHandler(async (req, res, next) => {
   const message = await Message.findOne({
     _id: messageId,
     sender: { $ne: requestingUserId },
-  }).populate('conversation');
+  }).populate("conversation");
 
   if (!message) {
     return error(res, null, "Message not found", 404);
@@ -256,7 +258,7 @@ const initiateConversation = asyncHandler(async (req, res, next) => {
 
     const receiver = getUserById(recipient._id);
 
-    console.log(receiver)
+    console.log(receiver);
     if (receiver) {
       req.io
         .to(receiver.socketId)
@@ -269,6 +271,28 @@ const initiateConversation = asyncHandler(async (req, res, next) => {
   }
 });
 
+const getConversation = asyncHandler(async (req, res) => {
+  const conversationId = req.params.conversationId;
+  const requestingUserId = req.user._id;
+
+  const conversation = await Conversation.findOne({
+    _id: conversationId,
+    $or: [
+      {
+        initiator: requestingUserId,
+      },
+      {
+        recipient: requestingUserId,
+      },
+    ],
+  });
+  if (!conversation) {
+    return error(res, null, "Conversation not found", 404);
+  }
+
+  return success(res, {conversation})
+});
+
 export {
   getConversations,
   getMessages,
@@ -276,4 +300,5 @@ export {
   updateMessage,
   markMessageAsRead,
   initiateConversation,
+  getConversation
 };

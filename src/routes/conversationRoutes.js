@@ -1,6 +1,6 @@
 import express from 'express'
 import { isVerifiedAndAuthenticated } from '../middlewares/authMiddleware.js'
-import { getConversations, getMessages, initiateConversation, markMessageAsRead, sendMessage, updateMessage } from '../controllers/conversationController.js'
+import { getConversation, getConversations, getMessages, initiateConversation, markMessageAsRead, sendMessage, updateMessage } from '../controllers/conversationController.js'
 
 const conversationRouter = express.Router()
 
@@ -15,5 +15,7 @@ conversationRouter.get('/:conversationId/messages', isVerifiedAndAuthenticated, 
 conversationRouter.patch('/:conversationId/messages/:messageId', isVerifiedAndAuthenticated, updateMessage)
 
 conversationRouter.patch('/:conversationId/messages/:messageId/read', isVerifiedAndAuthenticated, markMessageAsRead)
+
+conversationRouter.get('/:conversationId', isVerifiedAndAuthenticated, getConversation)
 
 export default conversationRouter
