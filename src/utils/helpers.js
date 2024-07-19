@@ -23,10 +23,10 @@ export const generateInitiatorUsername = async () => {
   return randomUsername;
 };
 
-export const generateRandomUsername = async () => {
+export const generateRandomUsername = async (length) => {
   let randomUsername;
   do {
-    randomUsername = "User_" + generateRandomString(8);
+    randomUsername = "User_" + generateRandomString(length);
   } while (await User.findOne({ username: randomUsername }));
 
   return randomUsername;

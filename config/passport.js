@@ -58,7 +58,7 @@ passport.use(
     async (accessToken, refreshToken, profile, done) => {
       try {
         const { id, displayName, name, username } = profile;
-        const generatedUsername = await generateRandomUsername();
+        // const generatedUsername = await generateRandomUsername();
 
         let user = await User.findOne({ facebookId: id });
 

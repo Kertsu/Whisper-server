@@ -182,7 +182,9 @@ const verifyEmail = asyncHandler(async (req, res, next) => {
 
 const validateUsername = asyncHandler(async (req, res, next) => {
   const { username } = req.params;
-  const user = await User.findOne({ username }).select("_id username avatar");
+  const user = await User.findOne({
+    $or: [{ username }, { generatedUsername: username }],
+  }).select("_id username avatar");
 
   if (!user) {
     return error(
@@ -354,11 +356,11 @@ const updatePassword = asyncHandler(async (req, res) => {
     return error(res, null, "User not found", 404);
   }
 
-  if(!user.password){
+  if (!user.password) {
     return error(res, null, "Account registered via OAuth", 400);
   }
 
-  if (!(await compareHash(oldPassword, user.password))){
+  if (!(await compareHash(oldPassword, user.password))) {
     return error(res, null, "Invalid old password", 401);
   }
 
@@ -371,7 +373,17 @@ const updatePassword = asyncHandler(async (req, res) => {
   await user.save();
 
   return success(res, null, "Password updated successfully");
+});
 
+const checkUsernameAvailability = asyncHandler(async (req, res) => {
+  const { username } = req.body;
+  const user = await User.findOne({ username });
+
+  if (user) {
+    return error(res, null, "Username already taken", 400);
+  }
+
+  return success(res, null, `${username} is available`);
 });
 
 export {
@@ -390,4 +402,5 @@ export {
   resetPassword,
   validateResetPasswordLink,
   updatePassword,
+  checkUsernameAvailability,
 };

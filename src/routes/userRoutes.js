@@ -1,6 +1,7 @@
 import express from "express";
 import {
   checkAuth,
+  checkUsernameAvailability,
   deleteSelf,
   forgotPassword,
   getSelf,
@@ -54,5 +55,7 @@ userRouter.post("/forgot_password", forgotPassword);
 userRouter.route('/reset_password/:token/:id').get(validateResetPasswordLink).patch(resetPassword);
 
 userRouter.patch('/update_password', isVerifiedAndAuthenticated, updatePassword)
+
+userRouter.post('/check_username_availability', isVerifiedAndAuthenticated, checkUsernameAvailability)
 
 export default userRouter;
