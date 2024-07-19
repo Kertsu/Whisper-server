@@ -9,7 +9,13 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
-      maxLength: 50
+      maxLength: 50,
+      validate: {
+        validator: function (v) {
+          return /^[a-zA-Z@_]+$/.test(v);
+        },
+        message: (props) => `${props.value} is not a valid username!`,
+      },
     },
     generatedUsername: {
       type: String,
@@ -55,7 +61,7 @@ const userSchema = new mongoose.Schema(
     passwordChangedAt: {
       type: Date,
       default: null,
-    }
+    },
   },
   { timestamps: true }
 );

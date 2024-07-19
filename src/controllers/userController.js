@@ -380,10 +380,36 @@ const checkUsernameAvailability = asyncHandler(async (req, res) => {
   const user = await User.findOne({ username });
 
   if (user) {
-    return error(res, null, "Username already taken", 400);
+    return error(res, null, "Username already taken", 409);
   }
 
   return success(res, null, `${username} is available`);
+});
+
+const updateUsername = asyncHandler(async (req, res) => {
+  const { username } = req.body;
+
+  if (!username) {
+    return error(res, null, "Missing required fields", 400);
+  }
+
+  const usernameTaken = await User.findOne({ username });
+
+  if (usernameTaken && usernameTaken._id.equals(req.user._id)) {
+    return error(res, null, "Username already taken", 409);
+  }
+
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.user._id,
+      { username },
+      { new: true }
+    ).select("-password");
+
+    return success(res, { user }, "Username updated successfully");
+  } catch (err) {
+    return error(res, null, "An error occurred");
+  }
 });
 
 export {
@@ -403,4 +429,5 @@ export {
   validateResetPasswordLink,
   updatePassword,
   checkUsernameAvailability,
+  updateUsername,
 };

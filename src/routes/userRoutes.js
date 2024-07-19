@@ -12,6 +12,7 @@ import {
   resendVerificationLink,
   resetPassword,
   updatePassword,
+  updateUsername,
   validateResetPasswordLink,
   validateToken,
   validateUsername,
@@ -52,10 +53,27 @@ userRouter.post("/token/validate", validateToken);
 
 userRouter.post("/forgot_password", forgotPassword);
 
-userRouter.route('/reset_password/:token/:id').get(validateResetPasswordLink).patch(resetPassword);
+userRouter
+  .route("/reset_password/:token/:id")
+  .get(validateResetPasswordLink)
+  .patch(resetPassword);
 
-userRouter.patch('/update_password', isVerifiedAndAuthenticated, updatePassword)
+userRouter.patch(
+  "/update_password",
+  isVerifiedAndAuthenticated,
+  updatePassword
+);
 
-userRouter.post('/check_username_availability', isVerifiedAndAuthenticated, checkUsernameAvailability)
+userRouter.post(
+  "/check_username_availability",
+  isVerifiedAndAuthenticated,
+  checkUsernameAvailability
+);
+
+userRouter.patch(
+  "/self/update_username",
+  isVerifiedAndAuthenticated,
+  updateUsername
+);
 
 export default userRouter;
