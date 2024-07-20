@@ -56,7 +56,7 @@ app.get("/", (req, res) => {
 });
 
 app.get("/hello-world", (req, res) => {
-  success(res, { message: "Hello, world!" });
+ res.send('<h1>HELLO WORLD</h1>');
 });
 
 app.get(
