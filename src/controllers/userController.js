@@ -10,6 +10,8 @@ import { compareHash, generateToken, hasher } from "../utils/helpers.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import cloudinary from "../../config/cloudinary.js";
+import axios from "axios";
+import Conversation from "../models/conversationsModel.js";
 
 const getSelf = asyncHandler(async (req, res, next) => {
   try {
@@ -453,6 +455,42 @@ const uploadProfilePicture = asyncHandler(async (req, res) => {
   }
 });
 
+const getAvatar = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+  if (!user) {
+    return error(res, null, "User not found", 404);
+  }
+
+  const { type } = req.query;
+  let imageUrl = user.avatar;
+
+  if (type === "pixelated") {
+    const parts = user.avatar.split("/");
+    const publicId = parts
+      .slice(parts.length - 2)
+      .join("/")
+      .split(".")[0];
+    imageUrl = cloudinary.url(publicId, {
+      transformation: [
+        { effect: "pixelate:120" },
+        { quality: "1" },
+        { fetch_format: "auto" },
+      ],
+      secure: true,
+    });
+  }
+
+  try {
+    const response = await axios.get(imageUrl, { responseType: "arraybuffer" });
+
+    res.set("Content-Type", "image/jpeg");
+    res.send(response.data);
+  } catch (err) {
+    console.error(err);
+    return error(res, null, "Error fetching image from Cloudinary", 500);
+  }
+});
+
 /**
  * 
  * const uploadProfilePicture = asyncHandler(async (req, res) => {
@@ -529,4 +567,5 @@ export {
   checkUsernameAvailability,
   updateUsername,
   uploadProfilePicture,
+  getAvatar,
 };

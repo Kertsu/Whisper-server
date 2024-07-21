@@ -1,21 +1,60 @@
-import express from 'express'
-import { isVerifiedAndAuthenticated } from '../middlewares/authMiddleware.js'
-import { getConversation, getConversations, getMessages, initiateConversation, markMessageAsRead, sendMessage, updateMessage } from '../controllers/conversationController.js'
+import express from "express";
+import { isVerifiedAndAuthenticated } from "../middlewares/authMiddleware.js";
+import {
+  getConversation,
+  getConversations,
+  getInitiatorAvatar,
+  getMessages,
+  initiateConversation,
+  markMessageAsRead,
+  sendMessage,
+  updateMessage,
+} from "../controllers/conversationController.js";
 
-const conversationRouter = express.Router()
+const conversationRouter = express.Router();
 
-conversationRouter.post('/initiate/:username', isVerifiedAndAuthenticated, initiateConversation)
+conversationRouter.post(
+  "/initiate/:username",
+  isVerifiedAndAuthenticated,
+  initiateConversation
+);
 
-conversationRouter.get('/', isVerifiedAndAuthenticated, getConversations)
+conversationRouter.get("/", isVerifiedAndAuthenticated, getConversations);
 
-conversationRouter.post('/:conversationId/messages/send', isVerifiedAndAuthenticated, sendMessage)
+conversationRouter.post(
+  "/:conversationId/messages/send",
+  isVerifiedAndAuthenticated,
+  sendMessage
+);
 
-conversationRouter.get('/:conversationId/messages', isVerifiedAndAuthenticated, getMessages)
+conversationRouter.get(
+  "/:conversationId/messages",
+  isVerifiedAndAuthenticated,
+  getMessages
+);
 
-conversationRouter.patch('/:conversationId/messages/:messageId', isVerifiedAndAuthenticated, updateMessage)
+conversationRouter.patch(
+  "/:conversationId/messages/:messageId",
+  isVerifiedAndAuthenticated,
+  updateMessage
+);
 
-conversationRouter.patch('/:conversationId/messages/:messageId/read', isVerifiedAndAuthenticated, markMessageAsRead)
+conversationRouter.patch(
+  "/:conversationId/messages/:messageId/read",
+  isVerifiedAndAuthenticated,
+  markMessageAsRead
+);
 
-conversationRouter.get('/:conversationId', isVerifiedAndAuthenticated, getConversation)
+conversationRouter.get(
+  "/:conversationId",
+  isVerifiedAndAuthenticated,
+  getConversation
+);
 
-export default conversationRouter
+conversationRouter.get(
+  "/:conversationId/initiator/avatar",
+  isVerifiedAndAuthenticated,
+  getInitiatorAvatar
+);
+
+export default conversationRouter;

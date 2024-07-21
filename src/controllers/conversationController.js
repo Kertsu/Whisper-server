@@ -8,6 +8,8 @@ import Conversation from "../models/conversationsModel.js";
 import User from "../models/userModel.js";
 import Message from "../models/messageModel.js";
 import { getUserById } from "../utils/socketManager.js";
+import cloudinary from "../../config/cloudinary.js";
+import axios from "axios";
 
 const getConversations = asyncHandler(async (req, res, next) => {
   const { first, rows } = req.query;
@@ -305,6 +307,45 @@ const getConversation = asyncHandler(async (req, res) => {
   return success(res, { conversation });
 });
 
+const getInitiatorAvatar = asyncHandler(async (req, res) => {
+  const conversationId = req.params.conversationId;
+  const conversation = await Conversation.findById(conversationId).populate(
+    "initiator"
+  );
+
+  if (!conversation) {
+    return error(res, null, "Conversation not found", 404);
+  }
+
+  if (!conversation.initiator) {
+    return error(res, null, "Initiator not found", 404);
+  }
+
+  const parts = conversation.initiator.avatar.split("/");
+  const publicId = parts
+    .slice(parts.length - 2)
+    .join("/")
+    .split(".")[0];
+  const imageUrl = cloudinary.url(publicId, {
+    transformation: [
+      { effect: "pixelate:120" },
+      { quality: "1" },
+      { fetch_format: "auto" },
+    ],
+    secure: true,
+  });
+
+  try {
+    const response = await axios.get(imageUrl, { responseType: "arraybuffer" });
+
+    res.set("Content-Type", "image/jpeg");
+    res.send(response.data);
+  } catch (err) {
+    console.error(err);
+    return error(res, null, "Error fetching image from Cloudinary", 500);
+  }
+});
+
 export {
   getConversations,
   getMessages,
@@ -313,4 +354,5 @@ export {
   markMessageAsRead,
   initiateConversation,
   getConversation,
+  getInitiatorAvatar,
 };

@@ -4,6 +4,7 @@ import {
   checkUsernameAvailability,
   deleteSelf,
   forgotPassword,
+  getAvatar,
   getSelf,
   login,
   logout,
@@ -84,5 +85,7 @@ userRouter.post(
   isVerifiedAndAuthenticated,
   uploadProfilePicture
 );
+
+userRouter.get('/self/avatar', isVerifiedAndAuthenticated, getAvatar)
 
 export default userRouter;
