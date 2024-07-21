@@ -9,6 +9,7 @@ import {
 import { compareHash, generateToken, hasher } from "../utils/helpers.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import cloudinary from "../../config/cloudinary.js";
 
 const getSelf = asyncHandler(async (req, res, next) => {
   try {
@@ -412,6 +413,103 @@ const updateUsername = asyncHandler(async (req, res) => {
   }
 });
 
+const uploadProfilePicture = asyncHandler(async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return error(res, null, "Username not found", 404);
+    }
+    if (!req.file) {
+      return error(res, null, "No file uploaded", 400);
+    }
+
+    cloudinary.uploader.upload(
+      req.file.path,
+      { folder: "profile_pictures" },
+      async (err, result) => {
+        if (err) {
+          return error(res, null, "Cannot upload profile picture");
+        }
+        const newImage = result.secure_url;
+
+        if (user.avatar) {
+          const publicId = user.avatar.split("/").pop().split(".")[0];
+          console.log(publicId);
+          await cloudinary.uploader
+            .destroy(`profile_pictures/${publicId}`)
+            .then((res) => {
+              console.log(res);
+            });
+        }
+
+        user.avatar = newImage;
+        await user.save();
+
+        return success(res, { user }, "Profile picture updated successfully");
+      }
+    );
+  } catch (err) {
+    return error(res, null, "Internal Server Error");
+  }
+});
+
+/**
+ * 
+ * const uploadProfilePicture = asyncHandler(async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return error(res, null, "User not found", 404);
+    }
+    if (!req.file) {
+      return error(res, null, "No file uploaded", 400);
+    }
+
+    // Upload the new image
+    cloudinary.uploader.upload(
+      req.file.path,
+      { folder: "profile_pictures" },
+      async (err, result) => {
+        if (err) {
+          return error(res, null, "Cannot upload profile picture");
+        }
+
+        const newImage = result.secure_url;
+        const publicId = result.public_id;
+
+        // Generate the pixelated URL
+        const pixelatedImage = cloudinary.url(publicId, {
+          transformation: [
+            { effect: "pixelate:120" },
+            { quality: "1" },
+            { fetch_format: "auto" }
+          ]
+        });
+
+        // Delete old image if it exists
+        if (user.avatar) {
+          const oldPublicId = user.avatar.split('/').pop().split('.')[0];
+          if (oldPublicId) {
+            await cloudinary.uploader.destroy(`profile_pictures/${oldPublicId}`);
+          }
+        }
+
+        // Update user with new image URLs
+        user.avatar = newImage;
+        user.pixelatedAvatar = pixelatedImage;
+        await user.save();
+
+        return success(res, { user }, "Profile picture updated successfully");
+      }
+    );
+  } catch (err) {
+    console.error(err); // Log error details for debugging
+    return error(res, null, "Internal Server Error");
+  }
+});
+
+ */
+
 export {
   getSelf,
   logout,
@@ -430,4 +528,5 @@ export {
   updatePassword,
   checkUsernameAvailability,
   updateUsername,
+  uploadProfilePicture,
 };

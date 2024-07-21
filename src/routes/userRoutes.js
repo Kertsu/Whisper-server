@@ -13,6 +13,7 @@ import {
   resetPassword,
   updatePassword,
   updateUsername,
+  uploadProfilePicture,
   validateResetPasswordLink,
   validateToken,
   validateUsername,
@@ -22,6 +23,7 @@ import {
   isAuthenticated,
   isVerifiedAndAuthenticated,
 } from "../middlewares/authMiddleware.js";
+import upload from "../../config/multer.js";
 
 const userRouter = express.Router();
 
@@ -74,6 +76,13 @@ userRouter.patch(
   "/self/update_username",
   isVerifiedAndAuthenticated,
   updateUsername
+);
+
+userRouter.post(
+  "/self/upload_profile_picture",
+  upload.single("avatar"),
+  isVerifiedAndAuthenticated,
+  uploadProfilePicture
 );
 
 export default userRouter;
