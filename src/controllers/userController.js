@@ -11,7 +11,6 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import cloudinary from "../../config/cloudinary.js";
 import axios from "axios";
-import Conversation from "../models/conversationsModel.js";
 
 const getSelf = asyncHandler(async (req, res, next) => {
   try {
@@ -21,7 +20,22 @@ const getSelf = asyncHandler(async (req, res, next) => {
       return error(res, null, "User not found", 404);
     }
 
-    return success(res, { user });
+    const imageUrl = cloudinary.url(user.avatar, { secure: true });
+
+    try {
+      const response = await axios.get(imageUrl, {
+        responseType: "arraybuffer",
+      });
+
+      user.avatar = `data:image/jpeg;base64,${Buffer.from(
+        response.data
+      ).toString("base64")}`;
+
+      return success(res, { user });
+    } catch (err) {
+      console.error(err);
+      return error(res, null, "Failed to fetch user's avatar");
+    }
   } catch (error) {
     next(error);
   }
@@ -433,9 +447,12 @@ const uploadProfilePicture = asyncHandler(async (req, res) => {
           return error(res, null, "Cannot upload profile picture");
         }
 
-        const newPublicId = result.public_id; 
+        const newPublicId = result.public_id;
 
-        if (user.avatar) {
+        if (
+          user.avatar &&
+          user.avatar != "profile_pictures/xcokzo4ucls0bj6qhk7h"
+        ) {
           await cloudinary.uploader.destroy(user.avatar).then((res) => {
             console.log("Previous avatar destroyed:", res);
           });
@@ -452,96 +469,6 @@ const uploadProfilePicture = asyncHandler(async (req, res) => {
     return error(res, null, "Internal Server Error");
   }
 });
-
-
-const getAvatar = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id);
-  if (!user) {
-    return error(res, null, "User not found", 404);
-  }
-
-  const { type } = req.query;
-  let imageUrl = cloudinary.url(user.avatar, { secure: true });
-
-  if (type === "pixelated") {
-    imageUrl = cloudinary.url(user.avatar, {
-      transformation: [
-        { effect: "pixelate:120" },
-        { quality: "1" },
-        { fetch_format: "auto" }
-      ],
-      secure: true
-    });
-  }
-
-  try {
-    const response = await axios.get(imageUrl, { responseType: "arraybuffer" });
-
-    res.set("Content-Type", "image/jpeg");
-    res.send(response.data);
-  } catch (err) {
-    console.error(err);
-    return error(res, null, "Error fetching image from Cloudinary", 500);
-  }
-});
-
-
-/**
- * 
- * const uploadProfilePicture = asyncHandler(async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return error(res, null, "User not found", 404);
-    }
-    if (!req.file) {
-      return error(res, null, "No file uploaded", 400);
-    }
-
-    // Upload the new image
-    cloudinary.uploader.upload(
-      req.file.path,
-      { folder: "profile_pictures" },
-      async (err, result) => {
-        if (err) {
-          return error(res, null, "Cannot upload profile picture");
-        }
-
-        const newImage = result.secure_url;
-        const publicId = result.public_id;
-
-        // Generate the pixelated URL
-        const pixelatedImage = cloudinary.url(publicId, {
-          transformation: [
-            { effect: "pixelate:120" },
-            { quality: "1" },
-            { fetch_format: "auto" }
-          ]
-        });
-
-        // Delete old image if it exists
-        if (user.avatar) {
-          const oldPublicId = user.avatar.split('/').pop().split('.')[0];
-          if (oldPublicId) {
-            await cloudinary.uploader.destroy(`profile_pictures/${oldPublicId}`);
-          }
-        }
-
-        // Update user with new image URLs
-        user.avatar = newImage;
-        user.pixelatedAvatar = pixelatedImage;
-        await user.save();
-
-        return success(res, { user }, "Profile picture updated successfully");
-      }
-    );
-  } catch (err) {
-    console.error(err); // Log error details for debugging
-    return error(res, null, "Internal Server Error");
-  }
-});
-
- */
 
 export {
   getSelf,
@@ -562,5 +489,4 @@ export {
   checkUsernameAvailability,
   updateUsername,
   uploadProfilePicture,
-  getAvatar,
 };

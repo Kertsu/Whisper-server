@@ -41,6 +41,7 @@ const userSchema = new mongoose.Schema(
     },
     avatar: {
       type: String,
+      default: "profile_pictures/xcokzo4ucls0bj6qhk7h",
     },
     hasOnboard: {
       type: Boolean,
