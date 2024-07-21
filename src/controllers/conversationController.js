@@ -11,9 +11,8 @@ import { getUserById } from "../utils/socketManager.js";
 import cloudinary from "../../config/cloudinary.js";
 import axios from "axios";
 
-const getConversations = asyncHandler(async (req, res, next) => {
+const getConversations = asyncHandler(async (req, res) => {
   const { first, rows } = req.query;
-
   const userId = req.user._id;
 
   const pipeline = buildConversationPipeline({
@@ -27,13 +26,59 @@ const getConversations = asyncHandler(async (req, res, next) => {
 
   try {
     const conversations = await Conversation.aggregate(pipeline).exec();
+
+    const populatedConversations = await Conversation.populate(conversations, {
+      path: "initiator",
+      select: "avatar", 
+    });
+
+    const conversationPromises = populatedConversations.map(
+      async (conversation) => {
+        if (conversation.initiator && conversation.initiator.avatar) {
+          const imageUrl = cloudinary.url(conversation.initiator.avatar, {
+            transformation: [
+              { effect: "pixelate:120" },
+              { quality: "1" },
+              { fetch_format: "auto" },
+            ],
+            secure: true,
+          });
+
+          try {
+            const response = await axios.get(imageUrl, {
+              responseType: "arraybuffer",
+            });
+            return {
+              ...conversation,
+              initiatorAvatar: `data:image/jpeg;base64,${Buffer.from(
+                response.data
+              ).toString("base64")}`,
+            };
+          } catch (err) {
+            console.error(err);
+            return {
+              ...conversation,
+              initiatorAvatar: null,
+            };
+          }
+        }
+        return {
+          ...conversation,
+          initiatorAvatar: null,
+        };
+      }
+    );
+
+    const updatedConversations = await Promise.all(conversationPromises);
+
+    // Fetch the total number of records
     const totalRecords = await Conversation.countDocuments({
       $or: [{ initiator: userId }, { recipient: userId }],
     });
 
     return success(
       res,
-      { conversations, totalRecords },
+      { conversations: updatedConversations, totalRecords },
       "Conversations fetched successfully"
     );
   } catch (err) {
@@ -307,44 +352,6 @@ const getConversation = asyncHandler(async (req, res) => {
   return success(res, { conversation });
 });
 
-const getInitiatorAvatar = asyncHandler(async (req, res) => {
-  const conversationId = req.params.conversationId;
-  const conversation = await Conversation.findById(conversationId).populate(
-    "initiator"
-  );
-
-  if (!conversation) {
-    return error(res, null, "Conversation not found", 404);
-  }
-
-  if (!conversation.initiator) {
-    return error(res, null, "Initiator not found", 404);
-  }
-
-  const parts = conversation.initiator.avatar.split("/");
-  const publicId = parts
-    .slice(parts.length - 2)
-    .join("/")
-    .split(".")[0];
-  const imageUrl = cloudinary.url(publicId, {
-    transformation: [
-      { effect: "pixelate:120" },
-      { quality: "1" },
-      { fetch_format: "auto" },
-    ],
-    secure: true,
-  });
-
-  try {
-    const response = await axios.get(imageUrl, { responseType: "arraybuffer" });
-
-    res.set("Content-Type", "image/jpeg");
-    res.send(response.data);
-  } catch (err) {
-    console.error(err);
-    return error(res, null, "Error fetching image from Cloudinary", 500);
-  }
-});
 
 export {
   getConversations,
@@ -354,5 +361,4 @@ export {
   markMessageAsRead,
   initiateConversation,
   getConversation,
-  getInitiatorAvatar,
 };

@@ -3,7 +3,6 @@ import { isVerifiedAndAuthenticated } from "../middlewares/authMiddleware.js";
 import {
   getConversation,
   getConversations,
-  getInitiatorAvatar,
   getMessages,
   initiateConversation,
   markMessageAsRead,
@@ -51,10 +50,5 @@ conversationRouter.get(
   getConversation
 );
 
-conversationRouter.get(
-  "/:conversationId/initiator/avatar",
-  isVerifiedAndAuthenticated,
-  getInitiatorAvatar
-);
 
 export default conversationRouter;

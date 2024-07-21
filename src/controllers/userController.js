@@ -432,28 +432,27 @@ const uploadProfilePicture = asyncHandler(async (req, res) => {
         if (err) {
           return error(res, null, "Cannot upload profile picture");
         }
-        const newImage = result.secure_url;
+
+        const newPublicId = result.public_id; 
 
         if (user.avatar) {
-          const publicId = user.avatar.split("/").pop().split(".")[0];
-          console.log(publicId);
-          await cloudinary.uploader
-            .destroy(`profile_pictures/${publicId}`)
-            .then((res) => {
-              console.log(res);
-            });
+          await cloudinary.uploader.destroy(user.avatar).then((res) => {
+            console.log("Previous avatar destroyed:", res);
+          });
         }
 
-        user.avatar = newImage;
+        user.avatar = newPublicId;
         await user.save();
 
         return success(res, { user }, "Profile picture updated successfully");
       }
     );
   } catch (err) {
+    console.error(err);
     return error(res, null, "Internal Server Error");
   }
 });
+
 
 const getAvatar = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
@@ -462,21 +461,16 @@ const getAvatar = asyncHandler(async (req, res) => {
   }
 
   const { type } = req.query;
-  let imageUrl = user.avatar;
+  let imageUrl = cloudinary.url(user.avatar, { secure: true });
 
   if (type === "pixelated") {
-    const parts = user.avatar.split("/");
-    const publicId = parts
-      .slice(parts.length - 2)
-      .join("/")
-      .split(".")[0];
-    imageUrl = cloudinary.url(publicId, {
+    imageUrl = cloudinary.url(user.avatar, {
       transformation: [
         { effect: "pixelate:120" },
         { quality: "1" },
-        { fetch_format: "auto" },
+        { fetch_format: "auto" }
       ],
-      secure: true,
+      secure: true
     });
   }
 
@@ -490,6 +484,7 @@ const getAvatar = asyncHandler(async (req, res) => {
     return error(res, null, "Error fetching image from Cloudinary", 500);
   }
 });
+
 
 /**
  * 
