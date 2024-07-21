@@ -73,13 +73,13 @@ userRouter.post(
 );
 
 userRouter.patch(
-  "/self/update_username",
+  "/@me/update_username",
   isVerifiedAndAuthenticated,
   updateUsername
 );
 
 userRouter.post(
-  "/self/upload_profile_picture",
+  "/@me/upload_profile_picture",
   upload.single("avatar"),
   isVerifiedAndAuthenticated,
   uploadProfilePicture

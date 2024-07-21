@@ -458,10 +458,23 @@ const uploadProfilePicture = asyncHandler(async (req, res) => {
           });
         }
 
-        user.avatar = newPublicId;
-        await user.save();
+        const avatarUrl = cloudinary.url(newPublicId, { secure: true });
 
-        return success(res, { user }, "Profile picture updated successfully");
+        try {
+          const response = await axios.get(avatarUrl, {
+            responseType: "arraybuffer",
+          });
+          user.avatar = newPublicId;
+          await user.save();
+          user.avatar = `data:image/jpeg;base64,${Buffer.from(
+            response.data
+          ).toString("base64")}`;
+
+          return success(res, { user }, "Profile picture updated successfully");
+        } catch (err) {
+          console.error(err);
+          return error(res, null, "Failed to upload user's avatar");
+        }
       }
     );
   } catch (err) {
