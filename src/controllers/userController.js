@@ -11,6 +11,7 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import cloudinary from "../../config/cloudinary.js";
 import axios from "axios";
+import { defaultAvatar } from "../assets/defaultAvatar.js";
 
 const getSelf = asyncHandler(async (req, res, next) => {
   try {
@@ -483,6 +484,31 @@ const uploadProfilePicture = asyncHandler(async (req, res) => {
   }
 });
 
+const removeProfilePicture = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (!user) {
+    return error(res, null, "User not found", 404);
+  }
+
+  if (user.avatar && user.avatar == "profile_pictures/xcokzo4ucls0bj6qhk7h") {
+    return error(res, null, "Invalid action", 404);
+  }
+
+  try {
+    await cloudinary.uploader.destroy(user.avatar).then(async (res) => {
+    });
+
+    user.avatar = "profile_pictures/xcokzo4ucls0bj6qhk7h";
+    await user.save();
+
+    user.avatar = defaultAvatar;
+    return success(res, { user }, 'Avatar removed successfully');
+  } catch (err) {
+    return error(res, null, "Failed to remove avatar");
+  }
+});
+
 export {
   getSelf,
   logout,
@@ -502,4 +528,5 @@ export {
   checkUsernameAvailability,
   updateUsername,
   uploadProfilePicture,
+  removeProfilePicture,
 };

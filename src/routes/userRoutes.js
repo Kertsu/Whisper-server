@@ -9,6 +9,7 @@ import {
   logout,
   onboard,
   register,
+  removeProfilePicture,
   resendVerificationLink,
   resetPassword,
   updatePassword,
@@ -85,5 +86,10 @@ userRouter.post(
   uploadProfilePicture
 );
 
+userRouter.delete(
+  "/@me/remove_profile_picture",
+  isVerifiedAndAuthenticated,
+  removeProfilePicture
+);
 
 export default userRouter;
