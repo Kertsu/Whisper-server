@@ -365,7 +365,9 @@ const getConversation = asyncHandler(async (req, res) => {
         recipient: requestingUserId,
       },
     ],
-  }).populate("recipient");
+  })
+    .populate("recipient", "_id username")
+    .populate("initiator", "_id");
   if (!conversation) {
     return error(res, null, "Conversation not found", 404);
   }
