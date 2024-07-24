@@ -63,6 +63,10 @@ const userSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    hasPassword: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

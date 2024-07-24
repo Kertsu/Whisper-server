@@ -6,7 +6,6 @@ import passport from "../config/passport.js";
 import userRouter from "./routes/userRoutes.js";
 import http from "http";
 import { Server } from "socket.io";
-import { success } from "./utils/httpResponse.js";
 import { connect } from "../config/db.js";
 import { addNewUser, removeUser } from "./utils/socketManager.js";
 import conversationRouter from "./routes/conversationRoutes.js";

@@ -7,6 +7,7 @@ import {
   sendVerificationLink,
 } from "../utils/mailer.js";
 import {
+  base64Encode,
   compareHash,
   generateToken,
   hasher,
@@ -15,7 +16,6 @@ import {
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import cloudinary from "../../config/cloudinary.js";
-import axios from "axios";
 import { defaultAvatar } from "../assets/defaultAvatar.js";
 
 const getSelf = asyncHandler(async (req, res, next) => {
@@ -26,16 +26,10 @@ const getSelf = asyncHandler(async (req, res, next) => {
       return error(res, null, "User not found", 404);
     }
 
-    const imageUrl = cloudinary.url(user.avatar, { secure: true });
 
     try {
-      const response = await axios.get(imageUrl, {
-        responseType: "arraybuffer",
-      });
-
-      user.avatar = `data:image/jpeg;base64,${Buffer.from(
-        response.data
-      ).toString("base64")}`;
+     
+      user.avatar = await base64Encode(user.avatar)
 
       return success(res, { user });
     } catch (err) {
@@ -124,6 +118,7 @@ const register = asyncHandler(async (req, res, next) => {
       email,
       username,
       password: hashedPassword,
+      hasPassword: true,
     });
 
     const token = generateToken(newUser._id, { expiresIn: 300 });
@@ -435,7 +430,9 @@ const updateUsername = asyncHandler(async (req, res) => {
       req.user._id,
       { username },
       { new: true }
-    ).select("-password");
+    );
+
+    user.avatar = await base64Encode(user.avatar);
 
     return success(res, { user }, "Username updated successfully");
   } catch (err) {
@@ -472,17 +469,10 @@ const uploadProfilePicture = asyncHandler(async (req, res) => {
           });
         }
 
-        const avatarUrl = cloudinary.url(newPublicId, { secure: true });
-
         try {
-          const response = await axios.get(avatarUrl, {
-            responseType: "arraybuffer",
-          });
           user.avatar = newPublicId;
           await user.save();
-          user.avatar = `data:image/jpeg;base64,${Buffer.from(
-            response.data
-          ).toString("base64")}`;
+          user.avatar = await base64Encode(newPublicId);
 
           return success(res, { user }, "Profile picture updated successfully");
         } catch (err) {

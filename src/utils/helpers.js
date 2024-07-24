@@ -3,6 +3,8 @@ import Conversation from "../models/conversationsModel.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import User from "../models/userModel.js";
+import cloudinary from "../../config/cloudinary.js";
+import axios from "axios";
 
 const generateRandomString = (length) => {
   const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -101,4 +103,21 @@ export const isValidPassword = (password) => {
   return /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/.test(
     password
   );
+};
+
+export const base64Encode = async (publicId) => {
+  const imageUrl = cloudinary.url(publicId, { secure: true });
+
+  try {
+    const response = await axios.get(imageUrl, {
+      responseType: "arraybuffer",
+    });
+
+    return `data:image/jpeg;base64,${Buffer.from(response.data).toString(
+      "base64"
+    )}`;
+  } catch (e) {
+    console.error("Error fetching image data:", e);
+    return null;
+  }
 };
