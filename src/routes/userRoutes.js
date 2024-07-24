@@ -46,7 +46,7 @@ userRouter.post(
   validateUsername
 );
 
-userRouter.delete("/self/delete", isVerifiedAndAuthenticated, deleteSelf);
+userRouter.delete("/@me/delete", isVerifiedAndAuthenticated, deleteSelf);
 
 userRouter.get("/logout", isAuthenticated, logout);
 
@@ -62,7 +62,7 @@ userRouter
   .patch(resetPassword);
 
 userRouter.patch(
-  "/update_password",
+  "/@me/update_password",
   isVerifiedAndAuthenticated,
   updatePassword
 );

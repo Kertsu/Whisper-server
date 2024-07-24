@@ -96,3 +96,9 @@ export const hasher = async (anything) => {
 export const compareHash = async (input, value) => {
   return await bcrypt.compare(input, value);
 };
+
+export const isValidPassword = (password) => {
+  return /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$/.test(
+    password
+  );
+};

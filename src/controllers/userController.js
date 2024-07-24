@@ -6,7 +6,12 @@ import {
   sendResetPasswordLink,
   sendVerificationLink,
 } from "../utils/mailer.js";
-import { compareHash, generateToken, hasher } from "../utils/helpers.js";
+import {
+  compareHash,
+  generateToken,
+  hasher,
+  isValidPassword,
+} from "../utils/helpers.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import cloudinary from "../../config/cloudinary.js";
@@ -105,6 +110,14 @@ const register = asyncHandler(async (req, res, next) => {
   }
 
   try {
+    if (!isValidPassword(password)) {
+      return error(
+        res,
+        null,
+        "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.",
+        400
+      );
+    }
     const hashedPassword = await hasher(password);
     const username = email.split("@")[0];
     const newUser = await User.create({
@@ -496,14 +509,13 @@ const removeProfilePicture = asyncHandler(async (req, res) => {
   }
 
   try {
-    await cloudinary.uploader.destroy(user.avatar).then(async (res) => {
-    });
+    await cloudinary.uploader.destroy(user.avatar).then(async (res) => {});
 
     user.avatar = "profile_pictures/xcokzo4ucls0bj6qhk7h";
     await user.save();
 
     user.avatar = defaultAvatar;
-    return success(res, { user }, 'Avatar removed successfully');
+    return success(res, { user }, "Avatar removed successfully");
   } catch (err) {
     return error(res, null, "Failed to remove avatar");
   }
