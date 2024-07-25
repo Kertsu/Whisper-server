@@ -221,6 +221,8 @@ const validateUsername = asyncHandler(async (req, res, next) => {
     );
   }
 
+  user.avatar = await base64Encode(user.avatar)
+
   return success(res, { user });
 });
 
