@@ -12,7 +12,7 @@ import cloudinary from "../../config/cloudinary.js";
 import axios from "axios";
 
 const getConversations = asyncHandler(async (req, res) => {
-  const { first, rows } = req.query;
+  const { first = 0, rows = 10 } = req.query;
   const userId = req.user._id;
 
   const pipeline = buildConversationPipeline({
@@ -93,13 +93,11 @@ const getConversations = asyncHandler(async (req, res) => {
 
     const updatedConversations = await Promise.all(conversationPromises);
 
-    const totalRecords = await Conversation.countDocuments({
-      $or: [{ initiator: userId }, { recipient: userId }],
-    });
+    const hasMore = updatedConversations.length == parseInt(rows);
 
     return success(
       res,
-      { conversations: updatedConversations, totalRecords },
+      { conversations: updatedConversations, hasMore },
       "Conversations fetched successfully"
     );
   } catch (err) {
