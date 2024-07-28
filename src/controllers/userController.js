@@ -26,10 +26,8 @@ const getSelf = asyncHandler(async (req, res, next) => {
       return error(res, null, "User not found", 404);
     }
 
-
     try {
-     
-      user.avatar = await base64Encode(user.avatar)
+      user.avatar = await base64Encode(user.avatar);
 
       return success(res, { user });
     } catch (err) {
@@ -87,6 +85,9 @@ const login = asyncHandler(async (req, res, next) => {
     ...user.toObject(),
     token: generateToken(user._id, { expiresIn: "1d" }),
   };
+
+  const hashedEmail = await hasher(email);
+  userData.email = user.emailVerifiedAt ? user.email : hashedEmail;
 
   return success(res, {
     user: userData,
@@ -221,7 +222,7 @@ const validateUsername = asyncHandler(async (req, res, next) => {
     );
   }
 
-  user.avatar = await base64Encode(user.avatar)
+  user.avatar = await base64Encode(user.avatar);
 
   return success(res, { user });
 });
