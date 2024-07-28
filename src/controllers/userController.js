@@ -255,6 +255,7 @@ const onboard = asyncHandler(async (req, res) => {
   user.hasOnboard = true;
   await user.save();
 
+  user.avatar = await base64Encode(user.avatar)
   return success(res, { user }, "User onboarded successfully");
 });
 
