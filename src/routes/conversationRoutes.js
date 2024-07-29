@@ -8,6 +8,7 @@ import {
   initiateConversation,
   markMessageAsRead,
   sendMessage,
+  unblockConversation,
   updateMessage,
 } from "../controllers/conversationController.js";
 
@@ -51,7 +52,16 @@ conversationRouter.get(
   getConversation
 );
 
-conversationRouter.patch('/:conversationId/block', isVerifiedAndAuthenticated, blockConversation)
+conversationRouter.patch(
+  "/:conversationId/block",
+  isVerifiedAndAuthenticated,
+  blockConversation
+);
 
+conversationRouter.patch(
+  "/:conversationId/unblock",
+  isVerifiedAndAuthenticated,
+  unblockConversation
+);
 
 export default conversationRouter;

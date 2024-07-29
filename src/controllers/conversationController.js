@@ -344,43 +344,100 @@ const blockConversation = asyncHandler(async (req, res) => {
   const isInitiator = conversation.initiator.equals(requestingUserId);
   const isRecipient = conversation.recipient.equals(requestingUserId);
 
-  let matchCondition;
+  if (!isInitiator && !isRecipient) {
+    return error(res, null, "Not authorized to block this conversation", 403);
+  }
+
+  let wasBlocked = false;
 
   if (isInitiator) {
-    matchCondition = { initiator: requestingUserId };
+    if (!conversation.blockedByInitiator) {
+      conversation.blockedByInitiator = true;
+      wasBlocked = true;
+      console.log("Blocked by initiator");
+    }
+  } else if (isRecipient) {
+    if (!conversation.blockedByRecipient) {
+      conversation.blockedByRecipient = true;
+      wasBlocked = true;
+      console.log("Blocked by recipient");
+    }
   }
 
-  if (isRecipient) {
-    matchCondition = { recipient: requestingUserId };
+  if (wasBlocked) {
+    await conversation.save();
+  } else {
+    return success(res, null, "Conversation already blocked", 200);
   }
 
+  const matchCondition = isInitiator
+    ? { initiator: requestingUserId }
+    : { recipient: requestingUserId };
   const pipeline = buildConversationPipeline(matchCondition);
 
-  const blockedByRecipient = conversation.recipient.equals(requestingUserId);
-  const blockedByInitiator = conversation.initiator.equals(requestingUserId);
-
-  if (blockedByRecipient) {
-    conversation.blockedByRecipient = true;
-    await conversation.save();
-    console.log("blocked by recipient");
-  }
-
-  if (blockedByInitiator) {
-    conversation.blockedByInitiator = true;
-    await conversation.save();
-    console.log("blocked by initiator");
-  }
-
   const conversations = await Conversation.aggregate(pipeline).exec();
-
   const conversationPromises = await createConversationPromises(conversations);
-
   const updatedConversations = await Promise.all(conversationPromises);
 
   return success(
     res,
     { conversations: updatedConversations },
     "Conversation blocked successfully"
+  );
+});
+
+const unblockConversation = asyncHandler(async (req, res) => {
+  const { conversationId } = req.params;
+  const requestingUserId = req.user._id;
+
+  const conversation = await Conversation.findById(conversationId);
+
+  if (
+    !conversation ||
+    (!conversation.initiator.equals(requestingUserId) &&
+      !conversation.recipient.equals(requestingUserId))
+  ) {
+    return error(res, null, "Conversation not found", 404);
+  }
+
+  const isInitiator = conversation.initiator.equals(requestingUserId);
+  const isRecipient = conversation.recipient.equals(requestingUserId);
+
+  if (!isInitiator && !isRecipient) {
+    return error(res, null, "Not authorized to unblock this conversation", 403);
+  }
+
+  let wasUnblocked = false;
+
+  if (isInitiator && conversation.blockedByInitiator) {
+    conversation.blockedByInitiator = false;
+    wasUnblocked = true;
+    console.log("Unblocked by initiator");
+  } else if (isRecipient && conversation.blockedByRecipient) {
+    conversation.blockedByRecipient = false;
+    wasUnblocked = true;
+    console.log("Unblocked by recipient");
+  }
+
+  if (wasUnblocked) {
+    await conversation.save();
+  } else {
+    return success(res, null, "Conversation already unblocked", 200);
+  }
+
+  const matchCondition = isInitiator
+    ? { initiator: requestingUserId }
+    : { recipient: requestingUserId };
+  const pipeline = buildConversationPipeline(matchCondition);
+
+  const conversations = await Conversation.aggregate(pipeline).exec();
+  const conversationPromises = await createConversationPromises(conversations);
+  const updatedConversations = await Promise.all(conversationPromises);
+
+  return success(
+    res,
+    { conversations: updatedConversations },
+    "Conversation unblocked successfully"
   );
 });
 
@@ -393,4 +450,5 @@ export {
   initiateConversation,
   getConversation,
   blockConversation,
+  unblockConversation,
 };
