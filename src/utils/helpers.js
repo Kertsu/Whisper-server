@@ -67,6 +67,8 @@ export const buildConversationPipeline = (matchCondition) => {
         initiator: 1,
         recipient: { _id: 1, username: 1, avatar: 1 },
         initiatorUsername: 1,
+        blockedByRecipient: 1,
+        blockedByInitiator: 1,
         latestMessage: {
           _id: 1,
           conversation: 1,
@@ -120,4 +122,72 @@ export const base64Encode = async (publicId) => {
     console.error("Error fetching image data:", e);
     return null;
   }
+};
+
+export const createConversationPromises = async (conversations) => {
+  const populatedConversations = await Conversation.populate(conversations, [
+    { path: "initiator", select: "avatar" },
+    { path: "recipient", select: "avatar username" },
+  ]);
+
+  const conversationPromises = populatedConversations.map(
+    async (conversation) => {
+      const updatedConversation = { ...conversation };
+
+      if (conversation.initiator && conversation.initiator.avatar) {
+        const initiatorImageUrl = cloudinary.url(
+          conversation.initiator.avatar,
+          {
+            transformation: [
+              { effect: "pixelate:200" },
+              { quality: "1" },
+              { fetch_format: "auto" },
+            ],
+            secure: true,
+          }
+        );
+
+        try {
+          const initiatorResponse = await axios.get(initiatorImageUrl, {
+            responseType: "arraybuffer",
+          });
+          updatedConversation.initiatorAvatar = `data:image/jpeg;base64,${Buffer.from(
+            initiatorResponse.data
+          ).toString("base64")}`;
+        } catch (err) {
+          console.error(err);
+          updatedConversation.initiatorAvatar = null;
+        }
+      } else {
+        updatedConversation.initiatorAvatar = null;
+      }
+
+      if (conversation.recipient && conversation.recipient.avatar) {
+        const recipientImageUrl = cloudinary.url(
+          conversation.recipient.avatar,
+          {
+            secure: true,
+          }
+        );
+
+        try {
+          const recipientResponse = await axios.get(recipientImageUrl, {
+            responseType: "arraybuffer",
+          });
+          updatedConversation.recipientAvatar = `data:image/jpeg;base64,${Buffer.from(
+            recipientResponse.data
+          ).toString("base64")}`;
+        } catch (err) {
+          console.error(err);
+          updatedConversation.recipientAvatar = null;
+        }
+      } else {
+        updatedConversation.recipientAvatar = null;
+      }
+
+      return updatedConversation;
+    }
+  );
+
+  return conversationPromises;
 };

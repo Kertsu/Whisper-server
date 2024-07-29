@@ -2,6 +2,7 @@ import asyncHandler from "express-async-handler";
 import { error, success } from "../utils/httpResponse.js";
 import {
   buildConversationPipeline,
+  createConversationPromises,
   generateInitiatorUsername,
 } from "../utils/helpers.js";
 import Conversation from "../models/conversationsModel.js";
@@ -27,68 +28,8 @@ const getConversations = asyncHandler(async (req, res) => {
   try {
     const conversations = await Conversation.aggregate(pipeline).exec();
 
-    const populatedConversations = await Conversation.populate(conversations, [
-      { path: "initiator", select: "avatar" },
-      { path: "recipient", select: "avatar username" },
-    ]);
-
-    const conversationPromises = populatedConversations.map(
-      async (conversation) => {
-        const updatedConversation = { ...conversation };
-
-        if (conversation.initiator && conversation.initiator.avatar) {
-          const initiatorImageUrl = cloudinary.url(
-            conversation.initiator.avatar,
-            {
-              transformation: [
-                { effect: "pixelate:200" },
-                { quality: "1" },
-                { fetch_format: "auto" },
-              ],
-              secure: true,
-            }
-          );
-
-          try {
-            const initiatorResponse = await axios.get(initiatorImageUrl, {
-              responseType: "arraybuffer",
-            });
-            updatedConversation.initiatorAvatar = `data:image/jpeg;base64,${Buffer.from(
-              initiatorResponse.data
-            ).toString("base64")}`;
-          } catch (err) {
-            console.error(err);
-            updatedConversation.initiatorAvatar = null;
-          }
-        } else {
-          updatedConversation.initiatorAvatar = null;
-        }
-
-        if (conversation.recipient && conversation.recipient.avatar) {
-          const recipientImageUrl = cloudinary.url(
-            conversation.recipient.avatar,
-            {
-              secure: true,
-            }
-          );
-
-          try {
-            const recipientResponse = await axios.get(recipientImageUrl, {
-              responseType: "arraybuffer",
-            });
-            updatedConversation.recipientAvatar = `data:image/jpeg;base64,${Buffer.from(
-              recipientResponse.data
-            ).toString("base64")}`;
-          } catch (err) {
-            console.error(err);
-            updatedConversation.recipientAvatar = null;
-          }
-        } else {
-          updatedConversation.recipientAvatar = null;
-        }
-
-        return updatedConversation;
-      }
+    const conversationPromises = await createConversationPromises(
+      conversations
     );
 
     const updatedConversations = await Promise.all(conversationPromises);
@@ -181,6 +122,23 @@ const sendMessage = asyncHandler(async (req, res, next) => {
       !conversation.initiator.equals(senderId))
   ) {
     return error(res, null, "Conversation not found", 404);
+  }
+
+  if (
+    (conversation.initiator.equals(senderId) &&
+      conversation.blockedByInitiator) ||
+    (conversation.recipient.equals(senderId) &&
+      conversation.blockedByRecipient) ||
+    (conversation.initiator.equals(senderId) &&
+      conversation.blockedByRecipient) ||
+    (conversation.recipient.equals(senderId) && conversation.blockedByInitiator)
+  ) {
+    return error(
+      res,
+      null,
+      "You cannot send messages in this conversation",
+      400
+    );
   }
 
   if (!content) {
@@ -373,6 +331,59 @@ const getConversation = asyncHandler(async (req, res) => {
   return success(res, { conversation });
 });
 
+const blockConversation = asyncHandler(async (req, res) => {
+  const { conversationId } = req.params;
+  const requestingUserId = req.user._id;
+
+  const conversation = await Conversation.findById(conversationId);
+
+  if (!conversation) {
+    return error(res, null, "Conversation not found", 404);
+  }
+
+  const isInitiator = conversation.initiator.equals(requestingUserId);
+  const isRecipient = conversation.recipient.equals(requestingUserId);
+
+  let matchCondition;
+
+  if (isInitiator) {
+    matchCondition = { initiator: requestingUserId };
+  }
+
+  if (isRecipient) {
+    matchCondition = { recipient: requestingUserId };
+  }
+
+  const pipeline = buildConversationPipeline(matchCondition);
+
+  const blockedByRecipient = conversation.recipient.equals(requestingUserId);
+  const blockedByInitiator = conversation.initiator.equals(requestingUserId);
+
+  if (blockedByRecipient) {
+    conversation.blockedByRecipient = true;
+    await conversation.save();
+    console.log("blocked by recipient");
+  }
+
+  if (blockedByInitiator) {
+    conversation.blockedByInitiator = true;
+    await conversation.save();
+    console.log("blocked by initiator");
+  }
+
+  const conversations = await Conversation.aggregate(pipeline).exec();
+
+  const conversationPromises = await createConversationPromises(conversations);
+
+  const updatedConversations = await Promise.all(conversationPromises);
+
+  return success(
+    res,
+    { conversations: updatedConversations },
+    "Conversation blocked successfully"
+  );
+});
+
 export {
   getConversations,
   getMessages,
@@ -381,4 +392,5 @@ export {
   markMessageAsRead,
   initiateConversation,
   getConversation,
+  blockConversation,
 };

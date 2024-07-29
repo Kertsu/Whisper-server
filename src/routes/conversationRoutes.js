@@ -1,6 +1,7 @@
 import express from "express";
 import { isVerifiedAndAuthenticated } from "../middlewares/authMiddleware.js";
 import {
+  blockConversation,
   getConversation,
   getConversations,
   getMessages,
@@ -49,6 +50,8 @@ conversationRouter.get(
   isVerifiedAndAuthenticated,
   getConversation
 );
+
+conversationRouter.patch('/:conversationId/block', isVerifiedAndAuthenticated, blockConversation)
 
 
 export default conversationRouter;

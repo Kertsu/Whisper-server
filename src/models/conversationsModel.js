@@ -15,6 +15,14 @@ const conversationSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
+    blockedByInitiator: {
+      type: Boolean,
+      default: false,
+    },
+    blockedByRecipient: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
