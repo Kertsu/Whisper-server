@@ -100,7 +100,6 @@ const getMessages = asyncHandler(async (req, res, next) => {
     );
 
     const message = latestMessage;
-    console.log(message);
 
     req.io.emit(`read.${conversation._id}`, { message });
   }
@@ -293,7 +292,6 @@ const initiateConversation = asyncHandler(async (req, res, next) => {
 
     const receiver = getUserById(recipient._id);
 
-    console.log(receiver);
     if (receiver) {
       req.io
         .to(receiver.socketId)
@@ -323,7 +321,6 @@ const getConversation = asyncHandler(async (req, res) => {
   };
 
   const conversation = await Conversation.findOne(matchCondition);
-  console.log(conversation, 'convo')
 
   if (!conversation) {
     return error(res, null, "Conversation not found", 404);
@@ -335,10 +332,6 @@ const getConversation = asyncHandler(async (req, res) => {
   const conversations = await Conversation.aggregate(pipeline).exec();
   const conversationPromises = await createConversationPromises(conversations);
   const updatedConversations = await Promise.all(conversationPromises);
-
-  console.log(conversations, 'convos');
-  console.log(conversationPromises, 'PROMISES');
-  console.log(updatedConversations, 'CONVO')
 
   return success(res, { conversations: updatedConversations });
 });
@@ -366,13 +359,11 @@ const blockConversation = asyncHandler(async (req, res) => {
     if (!conversation.blockedByInitiator) {
       conversation.blockedByInitiator = true;
       wasBlocked = true;
-      console.log("Blocked by initiator");
     }
   } else if (isRecipient) {
     if (!conversation.blockedByRecipient) {
       conversation.blockedByRecipient = true;
       wasBlocked = true;
-      console.log("Blocked by recipient");
     }
   }
 
@@ -424,11 +415,9 @@ const unblockConversation = asyncHandler(async (req, res) => {
   if (isInitiator && conversation.blockedByInitiator) {
     conversation.blockedByInitiator = false;
     wasUnblocked = true;
-    console.log("Unblocked by initiator");
   } else if (isRecipient && conversation.blockedByRecipient) {
     conversation.blockedByRecipient = false;
     wasUnblocked = true;
-    console.log("Unblocked by recipient");
   }
 
   if (wasUnblocked) {
