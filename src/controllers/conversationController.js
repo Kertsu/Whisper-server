@@ -9,8 +9,7 @@ import Conversation from "../models/conversationsModel.js";
 import User from "../models/userModel.js";
 import Message from "../models/messageModel.js";
 import { getUserById } from "../utils/socketManager.js";
-import cloudinary from "../../config/cloudinary.js";
-import axios from "axios";
+import mongoose from "mongoose";
 
 const getConversations = asyncHandler(async (req, res) => {
   const { first = 0, rows = 10 } = req.query;
@@ -311,8 +310,8 @@ const getConversation = asyncHandler(async (req, res) => {
   const conversationId = req.params.conversationId;
   const requestingUserId = req.user._id;
 
-  const conversation = await Conversation.findOne({
-    _id: conversationId,
+  const matchCondition = {
+    _id: new mongoose.Types.ObjectId(conversationId),
     $or: [
       {
         initiator: requestingUserId,
@@ -321,14 +320,27 @@ const getConversation = asyncHandler(async (req, res) => {
         recipient: requestingUserId,
       },
     ],
-  })
-    .populate("recipient", "_id username")
-    .populate("initiator", "_id");
+  };
+
+  const conversation = await Conversation.findOne(matchCondition);
+  console.log(conversation, 'convo')
+
   if (!conversation) {
     return error(res, null, "Conversation not found", 404);
   }
 
-  return success(res, { conversation });
+  
+  const pipeline = buildConversationPipeline(matchCondition);
+
+  const conversations = await Conversation.aggregate(pipeline).exec();
+  const conversationPromises = await createConversationPromises(conversations);
+  const updatedConversations = await Promise.all(conversationPromises);
+
+  console.log(conversations, 'convos');
+  console.log(conversationPromises, 'PROMISES');
+  console.log(updatedConversations, 'CONVO')
+
+  return success(res, { conversations: updatedConversations });
 });
 
 const blockConversation = asyncHandler(async (req, res) => {
