@@ -142,6 +142,7 @@ export const createConversationPromises = async (conversations) => {
               { effect: "pixelate:200" },
               { quality: "1" },
               { fetch_format: "auto" },
+              {angle: 90}
             ],
             secure: true,
           }
