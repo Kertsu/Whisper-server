@@ -6,7 +6,7 @@ export const addNewUser = (user, socketId) => {
     socketId,
   };
   !connectedUsers.some((existingUser) => existingUser.id === user._id) &&
-  connectedUsers.push(newUser);
+    connectedUsers.push(newUser);
 };
 
 export const removeUser = (socketId) => {

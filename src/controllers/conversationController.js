@@ -154,15 +154,24 @@ const sendMessage = asyncHandler(async (req, res, next) => {
     sender: senderId,
     conversation: conversationId,
     content,
+    status: "sent",
   });
 
   const message = await Message.findById(newMessage._id).populate(
     "conversation"
   );
 
-  req.io.emit(`conversation.${conversation._id}`, { message });
 
-  return success(res, { newMessage }, "Message sent successfully");
+  const recipientFromSocketList = getUserById(conversation.initiator.equals(senderId) ? conversation.recipient : conversation.initiator );
+
+  if (recipientFromSocketList) {
+    req.io
+      .to(recipientFromSocketList.socketId)
+      .emit(`conversation.${conversation._id}`, { message });
+  }
+
+
+  return success(res, { message }, "Message sent successfully");
 });
 
 const updateMessage = asyncHandler(async (req, res, next) => {
@@ -326,7 +335,6 @@ const getConversation = asyncHandler(async (req, res) => {
     return error(res, null, "Conversation not found", 404);
   }
 
-  
   const pipeline = buildConversationPipeline(matchCondition);
 
   const conversations = await Conversation.aggregate(pipeline).exec();
