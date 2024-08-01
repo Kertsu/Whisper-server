@@ -80,11 +80,15 @@ const getMessages = asyncHandler(async (req, res, next) => {
     createdAt: { $lt: messages[messages.length - 1].createdAt },
   });
 
-  const latestMessage = await Message.findOne({
-    conversation: conversationId,
-    sender: { $ne: requestingUserId },
-    readAt: null,
-  })
+  const latestMessage = await Message.findOneAndUpdate(
+    {
+      conversation: conversationId,
+      sender: { $ne: requestingUserId },
+      readAt: null,
+    },
+    {readAt: new Date()},
+    { new: true }
+  )
     .sort({ createdAt: -1 })
     .populate("conversation");
 
@@ -93,7 +97,7 @@ const getMessages = asyncHandler(async (req, res, next) => {
       {
         conversation: conversationId,
         sender: latestMessage.sender,
-        createdAt: { $lte: latestMessage.createdAt },
+        createdAt: { $lt: latestMessage.createdAt },
         readAt: null,
       },
       { readAt: new Date() }
@@ -161,15 +165,17 @@ const sendMessage = asyncHandler(async (req, res, next) => {
     "conversation"
   );
 
-
-  const recipientFromSocketList = getUserById(conversation.initiator.equals(senderId) ? conversation.recipient : conversation.initiator );
+  const recipientFromSocketList = getUserById(
+    conversation.initiator.equals(senderId)
+      ? conversation.recipient
+      : conversation.initiator
+  );
 
   if (recipientFromSocketList) {
     req.io
       .to(recipientFromSocketList.socketId)
       .emit(`conversation.${conversation._id}`, { message });
   }
-
 
   return success(res, { message }, "Message sent successfully");
 });
@@ -297,7 +303,9 @@ const initiateConversation = asyncHandler(async (req, res, next) => {
 
     const conversations = await Conversation.aggregate(pipeline).exec();
 
-    const conversationPromises = await createConversationPromises(conversations);
+    const conversationPromises = await createConversationPromises(
+      conversations
+    );
     const updatedConversations = await Promise.all(conversationPromises);
 
     let conversation = updatedConversations[0];

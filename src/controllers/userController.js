@@ -469,7 +469,6 @@ const uploadProfilePicture = asyncHandler(async (req, res) => {
           user.avatar != "profile_pictures/xcokzo4ucls0bj6qhk7h"
         ) {
           await cloudinary.uploader.destroy(user.avatar).then((res) => {
-            console.log("Previous avatar destroyed:", res);
           });
         }
 
