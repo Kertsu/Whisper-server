@@ -297,7 +297,10 @@ const initiateConversation = asyncHandler(async (req, res, next) => {
 
     const conversations = await Conversation.aggregate(pipeline).exec();
 
-    let conversation = conversations[0];
+    const conversationPromises = await createConversationPromises(conversations);
+    const updatedConversations = await Promise.all(conversationPromises);
+
+    let conversation = updatedConversations[0];
 
     const receiver = getUserById(recipient._id);
 
