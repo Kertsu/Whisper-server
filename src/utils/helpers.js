@@ -127,8 +127,8 @@ export const base64Encode = async (publicId) => {
 
 export const createConversationPromises = async (conversations) => {
   const populatedConversations = await Conversation.populate(conversations, [
-    { path: "initiator", select: "avatar" },
-    { path: "recipient", select: "avatar username" },
+    { path: "initiator", select: "avatar createdAt updatedAt" },
+    { path: "recipient", select: "avatar createdAt updatedAt username" },
   ]);
 
   const conversationPromises = populatedConversations.map(
