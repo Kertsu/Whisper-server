@@ -8,7 +8,7 @@ const setupTransporterAndMailGen = () => {
   let config = {
     service: "gmail",
     auth: {
-      user: process.env.NODEMAILER_EMAIL,
+      user: process.env.APP_EMAIL,
       pass: process.env.NODEMAILER_PASSWORD,
     },
     tls: {

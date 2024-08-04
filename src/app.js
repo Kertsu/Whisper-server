@@ -23,7 +23,7 @@ const io = new Server(httpServer, {
   },
 });
 
-const allowedOrigins = [process.env.APP_URL, process.env.SERVICE_URL, 'http://127.0.0.1:8080'];
+const allowedOrigins = [process.env.APP_URL, process.env.SERVICE_URL, 'http://127.0.0.1:8080', 'http://localhost:8080'];
 
 app.use((req, res, next) => {
   req.io = io;
