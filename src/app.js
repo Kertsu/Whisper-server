@@ -10,6 +10,7 @@ import { connect } from "../config/db.js";
 import { addNewUser, removeUser } from "./utils/socketManager.js";
 import conversationRouter from "./routes/conversationRoutes.js";
 import { generateToken } from "./utils/helpers.js";
+import subscriptionRouter from "./routes/subscriptionRoutes.js";
 
 dotenv.config();
 
@@ -17,7 +18,7 @@ const app = express();
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.APP_URL,
+    origin: [process.env.APP_URL, 'http://127.0.0.1:8080', 'http://localhost:8080'],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
   },
@@ -91,6 +92,7 @@ app.get(
 
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/conversations", conversationRouter);
+app.use("/api/v1/subscriptions", subscriptionRouter);
 
   io.on("connection", (socket) => {
     socket.on("disconnect", () => {

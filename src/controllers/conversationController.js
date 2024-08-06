@@ -4,6 +4,7 @@ import {
   buildConversationPipeline,
   createConversationPromises,
   generateInitiatorUsername,
+  sendPushNotification,
 } from "../utils/helpers.js";
 import Conversation from "../models/conversationsModel.js";
 import User from "../models/userModel.js";
@@ -86,7 +87,7 @@ const getMessages = asyncHandler(async (req, res, next) => {
       sender: { $ne: requestingUserId },
       readAt: null,
     },
-    {readAt: new Date()},
+    { readAt: new Date() },
     { new: true }
   )
     .sort({ createdAt: -1 })
@@ -165,17 +166,17 @@ const sendMessage = asyncHandler(async (req, res, next) => {
     "conversation"
   );
 
-  const recipientFromSocketList = getUserById(
-    conversation.initiator.equals(senderId)
-      ? conversation.recipient
-      : conversation.initiator
-  );
+  const recipientId = conversation.initiator.equals(senderId)
+    ? conversation.recipient
+    : conversation.initiator;
+  const recipientFromSocketList = getUserById(recipientId);
 
   if (recipientFromSocketList) {
     req.io
       .to(recipientFromSocketList.socketId)
       .emit(`conversation.${conversation._id}`, { message });
   }
+  await sendPushNotification(recipientId, message);
 
   return success(res, { message }, "Message sent successfully");
 });

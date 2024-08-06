@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import User from "../models/userModel.js";
 import cloudinary from "../../config/cloudinary.js";
 import axios from "axios";
+import webPush from "../../config/webPush.js";
 
 const generateRandomString = (length) => {
   const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -77,7 +78,7 @@ export const buildConversationPipeline = (matchCondition) => {
           readAt: 1,
           createdAt: 1,
           updatedAt: 1,
-          status: 1
+          status: 1,
         },
         createdAt: 1,
         updatedAt: 1,
@@ -143,7 +144,7 @@ export const createConversationPromises = async (conversations) => {
               { effect: "pixelate:200" },
               { quality: "1" },
               { fetch_format: "auto" },
-              {angle: 90}
+              { angle: 90 },
             ],
             secure: true,
           }
@@ -192,4 +193,31 @@ export const createConversationPromises = async (conversations) => {
   );
 
   return conversationPromises;
+};
+
+export const sendPushNotification = async (userId, message) => {
+  const user = await User.findById(userId);
+
+  if (user && user.pushNotificationSubscriptions) {
+    const payload = JSON.stringify({
+      title: "New Message",
+      body: `${message.sender}: ${message.content}`,
+      data: {
+        onActionClick: {
+          default: {
+            operation: "openWindow",
+          },
+        },
+      },
+      icon: "assets/icons/manifest-icon-512.maskable.png",
+
+    });
+
+    user.pushNotificationSubscriptions.forEach((subscription) => {
+      console.log(subscription, 'subsc')
+      webPush
+        .sendNotification(subscription, payload)
+        .catch((error) => console.error("Error sending notification", error));
+    });
+  }
 };
