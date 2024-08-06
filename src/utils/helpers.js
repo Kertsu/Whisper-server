@@ -195,29 +195,44 @@ export const createConversationPromises = async (conversations) => {
   return conversationPromises;
 };
 
-export const sendPushNotification = async (userId, message) => {
+export const sendPushNotification = async (userId, message, sender) => {
   const user = await User.findById(userId);
 
   if (user && user.pushNotificationSubscriptions) {
-    const payload = JSON.stringify({
-      title: "New Message",
-      body: `${message.sender}: ${message.content}`,
-      data: {
-        onActionClick: {
-          default: {
-            operation: "openWindow",
+    const payload = {
+      notification: {
+        title: "New Message",
+        body: `${sender}: ${message.content}`,
+        data: {
+          actions: [{ action: "focus", title: "Focus Last" }],
+          onActionClick: {
+            default: {
+              operation: "openWindow",
+              url: `${process.env.APP_URL}/whisper/whisps/${message.conversation._id}`,
+            },
+            focus: {
+              operation: "focusLastFocusedOrOpen",
+              url: `relative/path`,
+            },
           },
         },
+        icon: "assets/icons/manifest-icon-512.maskable.png",
       },
-      icon: "assets/icons/manifest-icon-512.maskable.png",
+    };
 
-    });
+    let promises = [];
 
     user.pushNotificationSubscriptions.forEach((subscription) => {
-      console.log(subscription, 'subsc')
-      webPush
-        .sendNotification(subscription, payload)
-        .catch((error) => console.error("Error sending notification", error));
+      promises.push(
+        webPush.sendNotification(subscription, JSON.stringify(payload))
+      );
     });
+    await Promise.all(promises)
+      .then(() => {
+        console.log("Push notifications sent successfully.");
+      })
+      .catch((error) => {
+        console.error("Error sending push notifications:", error);
+      });
   }
 };

@@ -117,7 +117,15 @@ const sendMessage = asyncHandler(async (req, res, next) => {
   const { content } = req.body;
   const senderId = req.user._id;
 
-  const conversation = await Conversation.findById(conversationId);
+  const pipeline = buildConversationPipeline({
+    _id: new mongoose.Types.ObjectId(conversationId),
+  });
+  const conversations = await Conversation.aggregate(pipeline).exec();
+
+  const conversationPromises = await createConversationPromises(conversations);
+
+  const updatedConversations = await Promise.all(conversationPromises);
+  const conversation = updatedConversations[0];
 
   if (
     !conversation ||
@@ -166,9 +174,10 @@ const sendMessage = asyncHandler(async (req, res, next) => {
     "conversation"
   );
 
-  const recipientId = conversation.initiator.equals(senderId)
-    ? conversation.recipient
-    : conversation.initiator;
+  const sender = conversation.initiator._id.equals(senderId) ? conversation.initiatorUsername : conversation.recipient.username
+  const recipientId = conversation.initiator._id.equals(senderId)
+    ? conversation.recipient._id
+    : conversation.initiator._id;
   const recipientFromSocketList = getUserById(recipientId);
 
   if (recipientFromSocketList) {
@@ -176,7 +185,7 @@ const sendMessage = asyncHandler(async (req, res, next) => {
       .to(recipientFromSocketList.socketId)
       .emit(`conversation.${conversation._id}`, { message });
   }
-  await sendPushNotification(recipientId, message);
+  await sendPushNotification(recipientId, message, sender);
 
   return success(res, { message }, "Message sent successfully");
 });
