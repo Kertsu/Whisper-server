@@ -44,15 +44,17 @@ const getSelf = asyncHandler(async (req, res, next) => {
  */
 const logout = asyncHandler(async (req, res, next) => {
   const userId = req.user._id;
-  const subscription = req.body.subscription
-  const endpoint = subscription.endpoint; 
+  const subscription = req.body.subscription;
+  const endpoint = subscription ? subscription.endpoint : null;
 
   try {
-    const user = await User.findByIdAndUpdate(
-      userId,
-      { $pull: { pushNotificationSubscriptions: { endpoint } } },
-      { new: true }
-    );
+    if (endpoint) {
+      const user = await User.findByIdAndUpdate(
+        userId,
+        { $pull: { pushNotificationSubscriptions: { endpoint } } },
+        { new: true }
+      );
+    }
 
     return success(res, null, "Logged out successfully.");
   } catch (err) {
