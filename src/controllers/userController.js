@@ -43,7 +43,22 @@ const getSelf = asyncHandler(async (req, res, next) => {
  * @todo revoke token
  */
 const logout = asyncHandler(async (req, res, next) => {
-  return success(res, null, "Logged out successfully");
+  const userId = req.user._id;
+  const subscription = req.body.subscription
+  const endpoint = subscription.endpoint; 
+
+  try {
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $pull: { pushNotificationSubscriptions: { endpoint } } },
+      { new: true }
+    );
+
+    return success(res, null, "Logged out successfully.");
+  } catch (err) {
+    console.error("Error logging out:", err);
+    return error(res, null, "Failed to log out.");
+  }
 });
 
 /**
@@ -255,7 +270,7 @@ const onboard = asyncHandler(async (req, res) => {
   user.hasOnboard = true;
   await user.save();
 
-  user.avatar = await base64Encode(user.avatar)
+  user.avatar = await base64Encode(user.avatar);
   return success(res, { user }, "User onboarded successfully");
 });
 
@@ -468,8 +483,7 @@ const uploadProfilePicture = asyncHandler(async (req, res) => {
           user.avatar &&
           user.avatar != "profile_pictures/xcokzo4ucls0bj6qhk7h"
         ) {
-          await cloudinary.uploader.destroy(user.avatar).then((res) => {
-          });
+          await cloudinary.uploader.destroy(user.avatar).then((res) => {});
         }
 
         try {

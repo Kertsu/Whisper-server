@@ -48,7 +48,7 @@ userRouter.post(
 
 userRouter.delete("/@me/delete", isVerifiedAndAuthenticated, deleteSelf);
 
-userRouter.get("/logout", isAuthenticated, logout);
+userRouter.post("/logout", isVerifiedAndAuthenticated, logout);
 
 userRouter.patch("/onboard", isVerifiedAndAuthenticated, onboard);
 

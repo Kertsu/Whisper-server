@@ -30,23 +30,3 @@ export const subscribeToPushNotifications = asyncHandler(async (req, res) => {
   }
 });
 
-export const unsubscribeFromPushNotifications = asyncHandler(
-  async (req, res) => {
-    const userId = req.user._id;
-
-    const endpoint = req.body.endpoint;
-
-    try {
-      const user = await User.findByIdAndUpdate(
-        userId,
-        {
-          $pull: { pushNotificationSubscriptions: { endpoint } },
-        },
-        { new: true }
-      );
-      return success(res, { user }, "Subscription removed.");
-    } catch (err) {
-      return error(res, null, "Failed to remove subscription");
-    }
-  }
-);
