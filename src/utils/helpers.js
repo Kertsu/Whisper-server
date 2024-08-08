@@ -109,8 +109,11 @@ export const isValidPassword = (password) => {
   );
 };
 
-export const base64Encode = async (publicId) => {
-  const imageUrl = cloudinary.url(publicId, { secure: true });
+export const base64Encode = async (publicId, transformations = []) => {
+  const imageUrl = cloudinary.url(publicId, {
+    secure: true,
+    transformation: transformations,
+  });
 
   try {
     const response = await axios.get(imageUrl, {
@@ -126,7 +129,11 @@ export const base64Encode = async (publicId) => {
   }
 };
 
-export const createConversationPromises = async (conversations) => {
+export const createConversationPromises = async (
+  conversations,
+  initiatorAvatarTransformations = [],
+  recipientAvatarTransformations = []
+) => {
   const populatedConversations = await Conversation.populate(conversations, [
     { path: "initiator", select: "avatar createdAt updatedAt" },
     { path: "recipient", select: "avatar createdAt updatedAt username" },
@@ -137,53 +144,19 @@ export const createConversationPromises = async (conversations) => {
       const updatedConversation = { ...conversation };
 
       if (conversation.initiator && conversation.initiator.avatar) {
-        const initiatorImageUrl = cloudinary.url(
+        updatedConversation.initiatorAvatar = await base64Encode(
           conversation.initiator.avatar,
-          {
-            transformation: [
-              { effect: "pixelate:200" },
-              { quality: "1" },
-              { fetch_format: "auto" },
-              { angle: 90 },
-            ],
-            secure: true,
-          }
+          initiatorAvatarTransformations
         );
-
-        try {
-          const initiatorResponse = await axios.get(initiatorImageUrl, {
-            responseType: "arraybuffer",
-          });
-          updatedConversation.initiatorAvatar = `data:image/jpeg;base64,${Buffer.from(
-            initiatorResponse.data
-          ).toString("base64")}`;
-        } catch (err) {
-          console.error(err);
-          updatedConversation.initiatorAvatar = null;
-        }
       } else {
         updatedConversation.initiatorAvatar = null;
       }
 
       if (conversation.recipient && conversation.recipient.avatar) {
-        const recipientImageUrl = cloudinary.url(
+        updatedConversation.recipientAvatar = await base64Encode(
           conversation.recipient.avatar,
-          {
-            secure: true,
-          }
+          recipientAvatarTransformations
         );
-
-        try {
-          const recipientResponse = await axios.get(recipientImageUrl, {
-            responseType: "arraybuffer",
-          });
-          updatedConversation.recipientAvatar = `data:image/jpeg;base64,${Buffer.from(
-            recipientResponse.data
-          ).toString("base64")}`;
-        } catch (err) {
-          console.error(err);
-          updatedConversation.recipientAvatar = null;
-        }
       } else {
         updatedConversation.recipientAvatar = null;
       }
@@ -195,20 +168,27 @@ export const createConversationPromises = async (conversations) => {
   return conversationPromises;
 };
 
-export const sendPushNotification = async (userId, message, sender) => {
+export const sendPushNotification = async (userId, message, conversation) => {
   const user = await User.findById(userId);
+  const sender = conversation.initiator._id.equals(user._id)
+    ? conversation.recipient.username
+    : conversation.initiatorUsername;
+  const icon = conversation.initiator._id.equals(user._id)
+    ? conversation.recipientAvatar
+    : conversation.initiatorAvatar;
 
   if (user && user.pushNotificationSubscriptions) {
     const payload = {
       notification: {
         title: "New Message",
         body: `${sender}: ${message.content}`,
+        tag: conversation._id,
         data: {
           actions: [{ action: "focus", title: "Focus Last" }],
           onActionClick: {
             default: {
               operation: "openWindow",
-              url: `${process.env.APP_URL}/whisper/whisps/${message.conversation._id}`,
+              url: `${process.env.APP_URL}/whisper/whisps/${conversation._id}`,
             },
             focus: {
               operation: "focusLastFocusedOrOpen",
@@ -217,6 +197,7 @@ export const sendPushNotification = async (userId, message, sender) => {
           },
         },
         icon: "assets/icons/manifest-icon-512.maskable.png",
+        badge: icon
       },
     };
 

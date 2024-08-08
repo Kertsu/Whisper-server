@@ -12,6 +12,15 @@ import Message from "../models/messageModel.js";
 import { getUserById } from "../utils/socketManager.js";
 import mongoose from "mongoose";
 
+const initiatorAvatarTransformations = [
+  {
+    effect: "pixelate:200",
+    quality: "1",
+    fetch_format: "auto",
+    angle: 90,
+  },
+];
+
 const getConversations = asyncHandler(async (req, res) => {
   const { first = 0, rows = 10 } = req.query;
   const userId = req.user._id;
@@ -29,7 +38,8 @@ const getConversations = asyncHandler(async (req, res) => {
     const conversations = await Conversation.aggregate(pipeline).exec();
 
     const conversationPromises = await createConversationPromises(
-      conversations
+      conversations,
+      initiatorAvatarTransformations
     );
 
     const updatedConversations = await Promise.all(conversationPromises);
@@ -117,12 +127,38 @@ const sendMessage = asyncHandler(async (req, res, next) => {
   const { content } = req.body;
   const senderId = req.user._id;
 
+  const initiatorAvatarTransformations = [
+    {
+      effect: "pixelate:20",
+      fetch_format: "auto",
+      angle: 90,
+      width: 72,
+      height: 72,
+      crop: "fill",
+      quality: "auto:low",
+    },
+  ];
+
+  const recipientAvatarTransformations = [
+    {
+      width: 72,
+      height: 72,
+      crop: "fill",
+      quality: "auto:low",
+      fetch_format: "auto",
+    },
+  ];
+
   const pipeline = buildConversationPipeline({
     _id: new mongoose.Types.ObjectId(conversationId),
   });
   const conversations = await Conversation.aggregate(pipeline).exec();
 
-  const conversationPromises = await createConversationPromises(conversations);
+  const conversationPromises = await createConversationPromises(
+    conversations,
+    initiatorAvatarTransformations,
+    recipientAvatarTransformations
+  );
 
   const updatedConversations = await Promise.all(conversationPromises);
   const conversation = updatedConversations[0];
@@ -174,7 +210,6 @@ const sendMessage = asyncHandler(async (req, res, next) => {
     "conversation"
   );
 
-  const sender = conversation.initiator._id.equals(senderId) ? conversation.initiatorUsername : conversation.recipient.username
   const recipientId = conversation.initiator._id.equals(senderId)
     ? conversation.recipient._id
     : conversation.initiator._id;
@@ -185,7 +220,7 @@ const sendMessage = asyncHandler(async (req, res, next) => {
       .to(recipientFromSocketList.socketId)
       .emit(`conversation.${conversation._id}`, { message });
   }
-  await sendPushNotification(recipientId, message, sender);
+  await sendPushNotification(recipientId, message, conversation);
 
   return success(res, { message }, "Message sent successfully");
 });
@@ -314,7 +349,8 @@ const initiateConversation = asyncHandler(async (req, res, next) => {
     const conversations = await Conversation.aggregate(pipeline).exec();
 
     const conversationPromises = await createConversationPromises(
-      conversations
+      conversations,
+      initiatorAvatarTransformations
     );
     const updatedConversations = await Promise.all(conversationPromises);
 
@@ -359,7 +395,10 @@ const getConversation = asyncHandler(async (req, res) => {
   const pipeline = buildConversationPipeline(matchCondition);
 
   const conversations = await Conversation.aggregate(pipeline).exec();
-  const conversationPromises = await createConversationPromises(conversations);
+  const conversationPromises = await createConversationPromises(
+    conversations,
+    initiatorAvatarTransformations
+  );
   const updatedConversations = await Promise.all(conversationPromises);
 
   return success(res, { conversations: updatedConversations });
@@ -408,7 +447,10 @@ const blockConversation = asyncHandler(async (req, res) => {
   const pipeline = buildConversationPipeline(matchCondition);
 
   const conversations = await Conversation.aggregate(pipeline).exec();
-  const conversationPromises = await createConversationPromises(conversations);
+  const conversationPromises = await createConversationPromises(
+    conversations,
+    initiatorAvatarTransformations
+  );
   const updatedConversations = await Promise.all(conversationPromises);
 
   return success(
@@ -461,7 +503,10 @@ const unblockConversation = asyncHandler(async (req, res) => {
   const pipeline = buildConversationPipeline(matchCondition);
 
   const conversations = await Conversation.aggregate(pipeline).exec();
-  const conversationPromises = await createConversationPromises(conversations);
+  const conversationPromises = await createConversationPromises(
+    conversations,
+    initiatorAvatarTransformations
+  );
   const updatedConversations = await Promise.all(conversationPromises);
 
   return success(
