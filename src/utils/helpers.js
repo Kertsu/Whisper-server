@@ -196,8 +196,7 @@ export const sendPushNotification = async (userId, message, conversation) => {
             },
           },
         },
-        icon: "assets/icons/manifest-icon-512.maskable.png",
-        badge: icon
+        icon,
       },
     };
 
