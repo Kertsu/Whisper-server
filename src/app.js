@@ -11,6 +11,7 @@ import { addNewUser, removeUser } from "./utils/socketManager.js";
 import conversationRouter from "./routes/conversation.routes.js";
 import { generateToken } from "./utils/helpers.js";
 import subscriptionRouter from "./routes/subscription.routes.js";
+import cron from './jobs/cron.job.js'
 
 dotenv.config();
 
