@@ -3,14 +3,14 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import passport from "../config/passport.js";
-import userRouter from "./routes/userRoutes.js";
+import userRouter from "./routes/user.routes.js";
 import http from "http";
 import { Server } from "socket.io";
 import { connect } from "../config/db.js";
 import { addNewUser, removeUser } from "./utils/socketManager.js";
-import conversationRouter from "./routes/conversationRoutes.js";
+import conversationRouter from "./routes/conversation.routes.js";
 import { generateToken } from "./utils/helpers.js";
-import subscriptionRouter from "./routes/subscriptionRoutes.js";
+import subscriptionRouter from "./routes/subscription.routes.js";
 
 dotenv.config();
 

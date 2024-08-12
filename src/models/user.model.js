@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
-import Conversation from "./conversationsModel.js";
-import Message from "./messageModel.js";
+import Conversation from "./conversation.model.js";
+import Message from "./message.model.js";
 
 const userSchema = new mongoose.Schema(
   {

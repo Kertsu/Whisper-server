@@ -6,9 +6,9 @@ import {
   generateInitiatorUsername,
   sendPushNotification,
 } from "../utils/helpers.js";
-import Conversation from "../models/conversationsModel.js";
-import User from "../models/userModel.js";
-import Message from "../models/messageModel.js";
+import Conversation from "../models/conversation.model.js";
+import User from "../models/user.model.js";
+import Message from "../models/message.model.js";
 import { getUserById } from "../utils/socketManager.js";
 import mongoose from "mongoose";
 

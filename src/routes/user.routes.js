@@ -19,11 +19,11 @@ import {
   validateToken,
   validateUsername,
   verifyEmail,
-} from "../controllers/userController.js";
+} from "../controllers/user.controller.js";
 import {
   isAuthenticated,
   isVerifiedAndAuthenticated,
-} from "../middlewares/authMiddleware.js";
+} from "../middlewares/auth.middleware.js";
 import upload from "../../config/multer.js";
 
 const userRouter = express.Router();

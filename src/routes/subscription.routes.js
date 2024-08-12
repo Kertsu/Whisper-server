@@ -1,6 +1,6 @@
 import express from "express";
-import { isVerifiedAndAuthenticated } from "../middlewares/authMiddleware.js";
-import { subscribeToPushNotifications } from "../controllers/subscriptionController.js";
+import { isVerifiedAndAuthenticated } from "../middlewares/auth.middleware.js";
+import { subscribeToPushNotifications } from "../controllers/subscription.controller.js";
 
 const subscriptionRouter = express.Router();
 

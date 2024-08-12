@@ -1,7 +1,7 @@
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as FacebookStrategy } from "passport-facebook";
-import User from "../src/models/userModel.js";
+import User from "../src/models/user.model.js";
 import dotenv from "dotenv";
 import { generateRandomUsername } from "../src/utils/helpers.js";
 

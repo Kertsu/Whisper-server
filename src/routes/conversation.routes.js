@@ -1,5 +1,5 @@
 import express from "express";
-import { isVerifiedAndAuthenticated } from "../middlewares/authMiddleware.js";
+import { isVerifiedAndAuthenticated } from "../middlewares/auth.middleware.js";
 import {
   blockConversation,
   getConversation,
@@ -10,7 +10,7 @@ import {
   sendMessage,
   unblockConversation,
   updateMessage,
-} from "../controllers/conversationController.js";
+} from "../controllers/conversation.controller.js";
 
 const conversationRouter = express.Router();
 

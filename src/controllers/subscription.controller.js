@@ -1,6 +1,6 @@
 import asyncHandler from "express-async-handler";
 import { error, success } from "../utils/httpResponse.js";
-import User from "../models/userModel.js";
+import User from "../models/user.model.js";
 
 export const subscribeToPushNotifications = asyncHandler(async (req, res) => {
   const userId = req.user._id;
