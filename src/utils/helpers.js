@@ -89,7 +89,7 @@ export const buildConversationPipeline = (matchCondition) => {
 };
 
 export const generateToken = (id, options) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, options);
+  return jwt.sign({ id }, process.env.ACCESS_TOKEN_SECRET, options);
 };
 
 export const hasher = async (anything) => {

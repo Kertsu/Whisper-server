@@ -200,7 +200,7 @@ const verifyEmail = asyncHandler(async (req, res, next) => {
       return error(res, null, "Email already verified", 409);
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
     if (!user._id.equals(id) || !(await compareHash(user.email, email))) {
       return error(res, null, "Invalid token", 400);
@@ -209,7 +209,7 @@ const verifyEmail = asyncHandler(async (req, res, next) => {
     user.emailVerifiedAt = new Date();
     await user.save();
 
-    const newToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+    const newToken = jwt.sign({ id: user._id }, process.env.ACCESS_TOKEN_SECRET, {
       expiresIn: "1d",
     });
 
@@ -248,7 +248,7 @@ const checkAuth = asyncHandler(async (req, res, next) => {
   try {
     const token = req.headers.authorization.split(" ")[1];
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
     if (decoded) {
       res.json({
@@ -279,7 +279,7 @@ const onboard = asyncHandler(async (req, res) => {
 const validateToken = asyncHandler(async (req, res) => {
   const { token } = req.body;
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
     if (decoded) {
       return success(res, null, "Token is valid");
     }
