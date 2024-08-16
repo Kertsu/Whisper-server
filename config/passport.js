@@ -46,35 +46,6 @@ passport.use(
   )
 );
 
-passport.use(
-  new FacebookStrategy(
-    {
-      clientID: process.env.FACEBOOK_APP_ID,
-      clientSecret: process.env.FACEBOOK_APP_SECRET,
-      callbackURL: `${process.env.SERVICE_URL}/auth/facebook/callback`,
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      try {
-        const { id, displayName, name, username } = profile;
-        // const generatedUsername = await generateRandomUsername();
-
-        let user = await User.findOne({ facebookId: id });
-
-        if (!user) {
-          user = await User.create({
-            facebookId: id,
-            username: generatedUsername,
-          });
-        }
-
-        done(null, user);
-      } catch (err) {
-        done(err, null);
-      }
-    }
-  )
-);
-
 passport.serializeUser((user, done) => {
   done(null, user.id);
 });
