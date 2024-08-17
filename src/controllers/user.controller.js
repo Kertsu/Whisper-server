@@ -1,3 +1,5 @@
+import crypto from "crypto";
+import jwt from "jsonwebtoken";
 import asyncHandler from "express-async-handler";
 import { error, success } from "../utils/httpResponse.js";
 import {
@@ -12,8 +14,6 @@ import {
   hasher,
   isValidPassword,
 } from "../utils/helpers.js";
-import jwt from "jsonwebtoken";
-import crypto from "crypto";
 import cloudinary from "../../config/cloudinary.js";
 import { defaultAvatar } from "../assets/defaultAvatar.js";
 import { User } from "../models/index.models.js";

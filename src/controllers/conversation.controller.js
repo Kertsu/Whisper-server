@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import asyncHandler from "express-async-handler";
 import { error, success } from "../utils/httpResponse.js";
 import {
@@ -8,7 +9,6 @@ import {
 } from "../utils/helpers.js";
 import { Conversation, User, Message } from "../models/index.models.js";
 import { getUserById } from "../utils/socketManager.js";
-import mongoose from "mongoose";
 
 const initiatorAvatarTransformations = [
   {

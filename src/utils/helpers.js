@@ -1,11 +1,10 @@
 import crypto from "crypto";
-import Conversation from "../models/conversation.model.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import User from "../models/user.model.js";
 import cloudinary from "../../config/cloudinary.js";
 import axios from "axios";
 import webPush from "../../config/webPush.js";
+import { User, Conversation } from "../models/index.models.js";
 
 const generateRandomString = (length) => {
   const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";

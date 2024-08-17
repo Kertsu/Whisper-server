@@ -1,6 +1,6 @@
 import cron from "node-cron";
-import RefreshToken from "../models/refreshToken.model.js";
 import axios from "axios";
+import { RefreshToken } from "../models/index.models.js";
 
 const SERVICE_URL = process.env.SERVICE_URL;
 
