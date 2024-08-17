@@ -8,9 +8,18 @@ import { Server } from "socket.io";
 import { connect } from "../config/db.js";
 import { addNewUser, removeUser } from "./utils/socketManager.js";
 import { generateToken } from "./utils/helpers.js";
-import {userRouter, conversationRouter, subscriptionRouter, reportRouter} from './routes/index.routes.js' 
+import {
+  userRouter,
+  conversationRouter,
+  subscriptionRouter,
+  reportRouter,
+} from "./routes/index.routes.js";
+import { keepAlive, refreshTokenCleanup } from "./jobs/cron.job.js";
 
 dotenv.config();
+
+keepAlive();
+refreshTokenCleanup();
 
 const app = express();
 const httpServer = http.createServer(app);
