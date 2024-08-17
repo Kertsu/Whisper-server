@@ -1,7 +1,6 @@
 import asyncHandler from "express-async-handler";
 import { error, success } from "../utils/httpResponse.js";
-import Report from "../models/report.model.js";
-import Conversation from "../models/conversation.model.js";
+import { Report, Conversation } from "../models/index.models.js";
 
 export const createReport = asyncHandler(async (req, res) => {
   const { reportType, conversationId } = req.body;

@@ -1,6 +1,5 @@
 import asyncHandler from "express-async-handler";
 import { error, success } from "../utils/httpResponse.js";
-import User from "../models/user.model.js";
 import {
   sendPasswordResetSuccess,
   sendResetPasswordLink,
@@ -17,6 +16,7 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import cloudinary from "../../config/cloudinary.js";
 import { defaultAvatar } from "../assets/defaultAvatar.js";
+import { User } from "../models/index.models.js";
 
 const getSelf = asyncHandler(async (req, res, next) => {
   try {
@@ -209,9 +209,13 @@ const verifyEmail = asyncHandler(async (req, res, next) => {
     user.emailVerifiedAt = new Date();
     await user.save();
 
-    const newToken = jwt.sign({ id: user._id }, process.env.ACCESS_TOKEN_SECRET, {
-      expiresIn: "1d",
-    });
+    const newToken = jwt.sign(
+      { id: user._id },
+      process.env.ACCESS_TOKEN_SECRET,
+      {
+        expiresIn: "1d",
+      }
+    );
 
     return success(
       res,

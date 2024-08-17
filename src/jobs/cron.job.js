@@ -6,7 +6,6 @@ const SERVICE_URL = process.env.SERVICE_URL;
 cron.schedule("* * * * *", async () => {
   const now = Date.now();
   await RefreshToken.deleteMany({ expirationDate: { $lt: now } });
-  console.log("Expired refresh tokens cleaned up");
 });
 
 cron.schedule("*/14 * * * *", async () => {

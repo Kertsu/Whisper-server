@@ -1,6 +1,6 @@
 import asyncHandler from "express-async-handler";
 import { error, success } from "../utils/httpResponse.js";
-import User from "../models/user.model.js";
+import { User } from "../models/index.models.js";
 
 export const subscribeToPushNotifications = asyncHandler(async (req, res) => {
   const userId = req.user._id;
@@ -29,4 +29,3 @@ export const subscribeToPushNotifications = asyncHandler(async (req, res) => {
     return error(res, null, "Failed to save subscription");
   }
 });
-
