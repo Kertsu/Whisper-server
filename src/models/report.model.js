@@ -2,12 +2,12 @@ import mongoose from "mongoose";
 
 const reportTokenSchema = new mongoose.Schema(
   {
-    reportedBy: {
+    plaintiff: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-    reportedUser: {
+    defendant: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,

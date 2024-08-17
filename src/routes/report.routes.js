@@ -4,6 +4,6 @@ import { createReport } from "../controllers/report.controller.js";
 
 const reportRouter = express.Router();
 
-reportRouter.post("/:defendantId", isVerifiedAndAuthenticated, createReport);
+reportRouter.post("/", isVerifiedAndAuthenticated, createReport);
 
 export default reportRouter;
