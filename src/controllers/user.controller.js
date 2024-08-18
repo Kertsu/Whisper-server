@@ -40,7 +40,6 @@ const getSelf = asyncHandler(async (req, res, next) => {
   }
 });
 
-
 const logout = asyncHandler(async (req, res, next) => {
   const userId = req.user._id;
   const { subscription, rt } = req.body;
@@ -55,10 +54,10 @@ const logout = asyncHandler(async (req, res, next) => {
       );
     }
 
-    if(rt){
+    if (rt) {
       await RefreshToken.findOneAndDelete({ token: rt });
     }
-    
+
     return success(res, null, "Logged out successfully.");
   } catch (err) {
     console.error("Error logging out:", err);
@@ -264,6 +263,9 @@ const checkAuth = asyncHandler(async (req, res, next) => {
       });
     }
   } catch (err) {
+    if (err.name === "TokenExpiredError") {
+      return error(res, null, "Access token expired", 401);
+    }
     res.json({
       isAuthenticated: false,
     });
@@ -535,6 +537,29 @@ const removeProfilePicture = asyncHandler(async (req, res) => {
     return success(res, { user }, "Avatar removed successfully");
   } catch (err) {
     return error(res, null, "Failed to remove avatar");
+  }
+});
+
+export const refreshAccessToken = asyncHandler(async (req, res) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return error(res, null, "Missing refresh token", 401);
+  }
+
+  try {
+    const storedToken = await RefreshToken.findOne({ token: refreshToken });
+
+    if (!storedToken || storedToken.expirationDate < Date.now()) {
+      return error(res, null, "Invalid or expired refresh token", 401);
+    }
+
+    const newAccessToken = generateToken(storedToken.user, { type: "access" });
+
+    return success(res, { accessToken: newAccessToken });
+  } catch (err) {
+    console.log(err)
+    return error(res, null, "Failed to refresh access token");
   }
 });
 

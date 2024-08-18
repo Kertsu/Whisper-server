@@ -36,6 +36,9 @@ const checkAuth = async (req, res, next, callback = null) => {
         return next();
       }
     } catch (err) {
+      if (err.name === "TokenExpiredError") {
+        return error(res, null, "Access token expired", 401);
+      }
       if (!res.headersSent) {
         return error(res, null, "Token invalid. Please log in again.", 401);
       }

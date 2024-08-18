@@ -8,6 +8,7 @@ import {
   login,
   logout,
   onboard,
+  refreshAccessToken,
   register,
   removeProfilePicture,
   resendVerificationLink,
@@ -90,6 +91,11 @@ userRouter.delete(
   "/@me/remove_profile_picture",
   isVerifiedAndAuthenticated,
   removeProfilePicture
+);
+
+userRouter.post(
+  "/@me/refresh_access_token",
+  refreshAccessToken
 );
 
 export default userRouter;
