@@ -7,7 +7,7 @@ import http from "http";
 import { Server } from "socket.io";
 import { connect } from "../config/db.js";
 import { addNewUser, removeUser } from "./utils/socketManager.js";
-import { generateToken } from "./utils/helpers.js";
+import { generateAndSaveRefreshToken, generateToken } from "./utils/helpers.js";
 import {
   userRouter,
   conversationRouter,
@@ -86,9 +86,10 @@ app.get(
     failureRedirect: redirectUri,
     session: false,
   }),
-  (req, res) => {
-    const token = generateToken(req.user._id, { expiresIn: "1d" });
-    res.redirect(`${redirectUri}/auth/callback?t=${token}`);
+  async (req, res) => {
+    const accessToken = generateToken(req.user._id, { type: 'access' });
+    const refreshToken = await generateAndSaveRefreshToken(req.user);
+    res.redirect(`${redirectUri}/auth/callback?at=${accessToken}&rt=${refreshToken}`);
   }
 );
 

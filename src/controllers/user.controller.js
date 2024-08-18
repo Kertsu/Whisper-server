@@ -10,13 +10,14 @@ import {
 import {
   base64Encode,
   compareHash,
+  generateAndSaveRefreshToken,
   generateToken,
   hasher,
   isValidPassword,
 } from "../utils/helpers.js";
 import cloudinary from "../../config/cloudinary.js";
 import { defaultAvatar } from "../assets/defaultAvatar.js";
-import { User } from "../models/index.models.js";
+import { RefreshToken, User } from "../models/index.models.js";
 
 const getSelf = asyncHandler(async (req, res, next) => {
   try {
@@ -39,23 +40,25 @@ const getSelf = asyncHandler(async (req, res, next) => {
   }
 });
 
-/**
- * @todo revoke token
- */
+
 const logout = asyncHandler(async (req, res, next) => {
   const userId = req.user._id;
-  const subscription = req.body.subscription;
+  const { subscription, rt } = req.body;
   const endpoint = subscription ? subscription.endpoint : null;
 
   try {
     if (endpoint) {
-      const user = await User.findByIdAndUpdate(
+      await User.findByIdAndUpdate(
         userId,
         { $pull: { pushNotificationSubscriptions: { endpoint } } },
         { new: true }
       );
     }
 
+    if(rt){
+      await RefreshToken.findOneAndDelete({ token: rt });
+    }
+    
     return success(res, null, "Logged out successfully.");
   } catch (err) {
     console.error("Error logging out:", err);
@@ -98,9 +101,12 @@ const login = asyncHandler(async (req, res, next) => {
     return error(res, null, "Invalid credentials", 401);
   }
 
+  const refreshToken = await generateAndSaveRefreshToken(user);
+
   const userData = {
     ...user.toObject(),
-    token: generateToken(user._id, {type: 'access'}),
+    accessToken: generateToken(user._id, { type: "access" }),
+    refreshToken,
   };
 
   const hashedEmail = await hasher(email);
@@ -209,17 +215,15 @@ const verifyEmail = asyncHandler(async (req, res, next) => {
     user.emailVerifiedAt = new Date();
     await user.save();
 
-    const newToken = jwt.sign(
-      { id: user._id },
-      process.env.ACCESS_TOKEN_SECRET,
-      {
-        expiresIn: "1d",
-      }
-    );
+    const userData = {
+      ...user.toObject(),
+      accessToken: generateToken(user._id, { type: "access" }),
+      refreshToken: await generateAndSaveRefreshToken(user),
+    };
 
     return success(
       res,
-      { token: newToken, user },
+      { user: userData },
       "Email verified and user logged in"
     );
   } catch (err) {

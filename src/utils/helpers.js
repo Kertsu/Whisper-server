@@ -88,16 +88,16 @@ export const buildConversationPipeline = (matchCondition) => {
 };
 
 export const generateToken = (id, options = {}) => {
-  const type = options.type || 'access'; 
-  const expiresIn = options.expiresIn || (type === 'refresh' ? '7d' : '15m');
-  
-  const secret = type === 'refresh' 
-    ? process.env.REFRESH_TOKEN_SECRET 
-    : process.env.ACCESS_TOKEN_SECRET;
-  
+  const type = options.type || "access";
+  const expiresIn = options.expiresIn || (type === "refresh" ? "7d" : "15m");
+
+  const secret =
+    type === "refresh"
+      ? process.env.REFRESH_TOKEN_SECRET
+      : process.env.ACCESS_TOKEN_SECRET;
+
   return jwt.sign({ id }, secret, { expiresIn });
 };
-
 
 export const hasher = async (anything) => {
   const salt = await bcrypt.genSalt(10);
@@ -224,4 +224,20 @@ export const sendPushNotification = async (userId, message, conversation) => {
   }
 };
 
-export const saveRefreshToken = async (refreshToken) => {};
+export const generateAndSaveRefreshToken = async (user) => {
+  let rt;
+  do {
+    rt = generateToken(user._id, { type: "refresh" });
+  } while (
+    await RefreshToken.findOne({
+      token: rt,
+    })
+  );
+
+  await RefreshToken.create({
+    user: user._id,
+    token: rt,
+  });
+
+  return rt;
+};
