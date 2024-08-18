@@ -100,7 +100,7 @@ const login = asyncHandler(async (req, res, next) => {
 
   const userData = {
     ...user.toObject(),
-    token: generateToken(user._id, { expiresIn: "1d" }),
+    token: generateToken(user._id, {type: 'access'}),
   };
 
   const hashedEmail = await hasher(email);

@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import cloudinary from "../../config/cloudinary.js";
 import axios from "axios";
 import webPush from "../../config/webPush.js";
-import { User, Conversation } from "../models/index.models.js";
+import { User, Conversation, RefreshToken } from "../models/index.models.js";
 
 const generateRandomString = (length) => {
   const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -87,9 +87,17 @@ export const buildConversationPipeline = (matchCondition) => {
   ];
 };
 
-export const generateToken = (id, options) => {
-  return jwt.sign({ id }, process.env.ACCESS_TOKEN_SECRET, options);
+export const generateToken = (id, options = {}) => {
+  const type = options.type || 'access'; 
+  const expiresIn = options.expiresIn || (type === 'refresh' ? '7d' : '15m');
+  
+  const secret = type === 'refresh' 
+    ? process.env.REFRESH_TOKEN_SECRET 
+    : process.env.ACCESS_TOKEN_SECRET;
+  
+  return jwt.sign({ id }, secret, { expiresIn });
 };
+
 
 export const hasher = async (anything) => {
   const salt = await bcrypt.genSalt(10);
@@ -215,3 +223,5 @@ export const sendPushNotification = async (userId, message, conversation) => {
       });
   }
 };
+
+export const saveRefreshToken = async (refreshToken) => {};
