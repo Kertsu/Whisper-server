@@ -89,7 +89,7 @@ export const buildConversationPipeline = (matchCondition) => {
 
 export const generateToken = (id, options = {}) => {
   const type = options.type || "access";
-  const expiresIn = options.expiresIn || (type === "refresh" ? "7d" : "10s");
+  const expiresIn = options.expiresIn || (type === "refresh" ? "7d" : "15m");
 
   const secret =
     type === "refresh"
