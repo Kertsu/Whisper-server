@@ -47,7 +47,7 @@ userRouter.post(
   validateUsername
 );
 
-userRouter.delete("/@me/delete", isVerifiedAndAuthenticated, deleteSelf);
+userRouter.post("/@me/delete", isVerifiedAndAuthenticated, deleteSelf);
 
 userRouter.post("/logout", isVerifiedAndAuthenticated, logout);
 

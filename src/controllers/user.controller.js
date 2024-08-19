@@ -69,6 +69,12 @@ const logout = asyncHandler(async (req, res, next) => {
  * @todo revoke token
  */
 const deleteSelf = asyncHandler(async (req, res, next) => {
+  const wrt = req.body.wrt;
+
+  if (!wrt) {
+    return error(res, null, "Failed to delete user", 400);
+  }
+
   try {
     const user = await User.findById(req.user._id);
 
@@ -76,6 +82,7 @@ const deleteSelf = asyncHandler(async (req, res, next) => {
       return error(res, null, "User not found", 404);
     }
 
+    await RefreshToken.findOneAndDelete({ user: user._id, token: wrt });
     await User.findOneAndDelete({ _id: req.user._id });
 
     return success(res, null, "Account deleted successfully");
@@ -558,7 +565,7 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
 
     return success(res, { accessToken: newAccessToken });
   } catch (err) {
-    console.log(err)
+    console.log(err);
     return error(res, null, "Failed to refresh access token");
   }
 });
