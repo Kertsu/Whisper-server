@@ -439,9 +439,8 @@ const blockConversation = asyncHandler(async (req, res) => {
     return success(res, null, "Conversation already blocked", 200);
   }
 
-  const matchCondition = isInitiator
-    ? { initiator: requestingUserId }
-    : { recipient: requestingUserId };
+  const matchCondition = { _id: new mongoose.Types.ObjectId(conversationId) };
+
   const pipeline = buildConversationPipeline(matchCondition);
 
   const conversations = await Conversation.aggregate(pipeline).exec();
@@ -495,9 +494,7 @@ const unblockConversation = asyncHandler(async (req, res) => {
     return success(res, null, "Conversation already unblocked", 200);
   }
 
-  const matchCondition = isInitiator
-    ? { initiator: requestingUserId }
-    : { recipient: requestingUserId };
+  const matchCondition = { _id: new mongoose.Types.ObjectId(conversationId) };
   const pipeline = buildConversationPipeline(matchCondition);
 
   const conversations = await Conversation.aggregate(pipeline).exec();
