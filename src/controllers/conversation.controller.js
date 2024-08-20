@@ -58,7 +58,7 @@ const getConversations = asyncHandler(async (req, res) => {
 const getMessages = asyncHandler(async (req, res, next) => {
   const requestingUserId = req.user._id;
   const conversationId = req.params.conversationId;
-  const { rows = 10, before } = req.query;
+  const { rows = 10, before, preview = false } = req.query;
 
   const conversation = await Conversation.findById(conversationId);
 
@@ -114,7 +114,9 @@ const getMessages = asyncHandler(async (req, res, next) => {
 
     const message = latestMessage;
 
-    req.io.emit(`read.${conversation._id}`, { message });
+    if (!preview) {
+      req.io.emit(`read.${conversation._id}`, { message });
+    }
   }
 
   return success(res, { messages, olderMessages });
