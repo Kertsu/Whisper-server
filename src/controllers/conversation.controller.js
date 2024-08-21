@@ -88,33 +88,33 @@ const getMessages = asyncHandler(async (req, res, next) => {
     conversation: conversationId,
     createdAt: { $lt: messages[messages.length - 1].createdAt },
   });
-
-  const latestMessage = await Message.findOneAndUpdate(
-    {
-      conversation: conversationId,
-      sender: { $ne: requestingUserId },
-      readAt: null,
-    },
-    { readAt: new Date() },
-    { new: true }
-  )
-    .sort({ createdAt: -1 })
-    .populate("conversation");
-
-  if (latestMessage) {
-    await Message.updateMany(
+  
+  if (!preview) {
+    const latestMessage = await Message.findOneAndUpdate(
       {
         conversation: conversationId,
-        sender: latestMessage.sender,
-        createdAt: { $lt: latestMessage.createdAt },
+        sender: { $ne: requestingUserId },
         readAt: null,
       },
-      { readAt: new Date() }
-    );
+      { readAt: new Date() },
+      { new: true }
+    )
+      .sort({ createdAt: -1 })
+      .populate("conversation");
 
-    const message = latestMessage;
+    if (latestMessage) {
+      await Message.updateMany(
+        {
+          conversation: conversationId,
+          sender: latestMessage.sender,
+          createdAt: { $lt: latestMessage.createdAt },
+          readAt: null,
+        },
+        { readAt: new Date() }
+      );
 
-    if (!preview) {
+      const message = latestMessage;
+
       req.io.emit(`read.${conversation._id}`, { message });
     }
   }
