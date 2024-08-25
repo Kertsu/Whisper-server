@@ -175,7 +175,7 @@ export const createConversationPromises = async (
   return conversationPromises;
 };
 
-export const sendPushNotification = async (userId, message, conversation) => {
+export const sendPushNotification = async (userId, message, conversation, type = "initiate") => {
   const user = await User.findById(userId);
   const sender = conversation.initiator._id.equals(user._id)
     ? conversation.recipient.username
@@ -187,7 +187,7 @@ export const sendPushNotification = async (userId, message, conversation) => {
   if (user && user.pushNotificationSubscriptions) {
     const payload = {
       notification: {
-        title: "New Message",
+        title: type === "initiate" ? "New Message" : `From ${sender}`,
         body: `${sender}: ${message.content}`,
         tag: conversation._id,
         data: {

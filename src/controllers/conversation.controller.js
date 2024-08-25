@@ -88,7 +88,7 @@ const getMessages = asyncHandler(async (req, res, next) => {
     conversation: conversationId,
     createdAt: { $lt: messages[messages.length - 1].createdAt },
   });
-  
+
   if (!preview) {
     const latestMessage = await Message.findOneAndUpdate(
       {
@@ -220,7 +220,7 @@ const sendMessage = asyncHandler(async (req, res, next) => {
       .to(recipientFromSocketList.socketId)
       .emit(`conversation.${conversation._id}`, { message });
   }
-  await sendPushNotification(recipientId, message, conversation);
+  await sendPushNotification(recipientId, message, conversation, 'existing');
 
   return success(res, { message }, "Message sent successfully");
 });
@@ -338,7 +338,7 @@ const initiateConversation = asyncHandler(async (req, res, next) => {
       initiatorUsername,
     });
 
-    await Message.create({
+    const newMessage = await Message.create({
       sender: req.user._id,
       conversation: newConversation._id,
       content,
@@ -363,6 +363,8 @@ const initiateConversation = asyncHandler(async (req, res, next) => {
         .to(receiver.socketId)
         .emit(`receive.${receiver._id}`, { conversation });
     }
+
+    await sendPushNotification(recipient._id, newMessage, conversation);
 
     return success(res, { newConversation }, "Message sent");
   } catch (err) {
