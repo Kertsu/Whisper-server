@@ -47,9 +47,9 @@ const logout = asyncHandler(async (req, res, next) => {
 
   try {
     if (endpoint) {
-      await User.findByIdAndUpdate(
-        userId,
-        { $pull: { pushNotificationSubscriptions: { endpoint } } },
+      await User.findOneAndUpdate(
+        { _id: userId, "pushNotificationSubscriptions.endpoint": endpoint },
+        { $set: { "pushNotificationSubscriptions.$.active": false } },
         { new: true }
       );
     }

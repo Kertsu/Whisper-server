@@ -1,6 +1,10 @@
 import express from "express";
 import { isVerifiedAndAuthenticated } from "../middlewares/auth.middleware.js";
-import { subscribeToPushNotifications, unsubscribeToPushNotifications } from "../controllers/subscription.controller.js";
+import {
+  reactivateSubscription,
+  subscribeToPushNotifications,
+  unsubscribeToPushNotifications,
+} from "../controllers/subscription.controller.js";
 
 const subscriptionRouter = express.Router();
 
@@ -11,8 +15,11 @@ subscriptionRouter.post(
 );
 
 subscriptionRouter.post(
-  "/unsubscribe",
-  unsubscribeToPushNotifications
+  "/reactivate",
+  isVerifiedAndAuthenticated,
+  reactivateSubscription
 );
+
+subscriptionRouter.post("/unsubscribe", unsubscribeToPushNotifications);
 
 export default subscriptionRouter;

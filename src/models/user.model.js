@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
-import {Conversation, Message} from './index.models.js'
+import { Conversation, Message } from "./index.models.js";
 
 const userSchema = new mongoose.Schema(
   {
@@ -72,6 +72,10 @@ const userSchema = new mongoose.Schema(
         keys: {
           auth: String,
           p256dh: String,
+        },
+        active: {
+          type: Boolean,
+          default: true,
         },
       },
     ],

@@ -175,7 +175,12 @@ export const createConversationPromises = async (
   return conversationPromises;
 };
 
-export const sendPushNotification = async (userId, message, conversation, type = "initiate") => {
+export const sendPushNotification = async (
+  userId,
+  message,
+  conversation,
+  type = "initiate"
+) => {
   const user = await User.findById(userId);
   const sender = conversation.initiator._id.equals(user._id)
     ? conversation.recipient.username
@@ -210,17 +215,21 @@ export const sendPushNotification = async (userId, message, conversation, type =
     let promises = [];
 
     user.pushNotificationSubscriptions.forEach((subscription) => {
-      promises.push(
-        webPush.sendNotification(subscription, JSON.stringify(payload))
-      );
+      if (subscription.active) {
+        promises.push(
+          webPush.sendNotification(subscription, JSON.stringify(payload))
+        );
+      }
     });
-    await Promise.all(promises)
-      .then(() => {
-        console.log("Push notifications sent successfully.");
-      })
-      .catch((error) => {
-        console.error("Error sending push notifications:", error);
-      });
+    if (promises.length > 0) {
+      await Promise.all(promises)
+        .then(() => {
+          console.log("Push notifications sent successfully.");
+        })
+        .catch((error) => {
+          console.error("Error sending push notifications:", error);
+        });
+    }
   }
 };
 

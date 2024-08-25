@@ -65,3 +65,23 @@ export const unsubscribeToPushNotifications = asyncHandler(async (req, res) => {
     return error(res, null, "Failed to remove subscription");
   }
 });
+
+export const reactivateSubscription = asyncHandler(async (req, res, next) => {
+  const userId = req.user._id;
+  const { subscription } = req.body;
+  const endpoint = subscription ? subscription.endpoint : null;
+
+  try {
+    const user = await User.findOneAndUpdate(
+      { _id: userId, "pushNotificationSubscriptions.endpoint": endpoint },
+      { $set: { "pushNotificationSubscriptions.$.active": true } },
+      { new: true }
+    );
+    user.avatar = await base64Encode(user.avatar);
+
+    return success(res, { user }, "Subscription reactivated successfully.");
+  } catch (err) {
+    console.error("Error reactivating subscription:", err);
+    return error(res, null, "Failed to reactivate subscription.");
+  }
+});
