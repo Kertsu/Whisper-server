@@ -1,6 +1,7 @@
 import asyncHandler from "express-async-handler";
 import { error, success } from "../utils/httpResponse.js";
 import { User } from "../models/index.models.js";
+import { base64Encode } from "../utils/helpers.js";
 
 export const subscribeToPushNotifications = asyncHandler(async (req, res) => {
   const userId = req.user._id;
@@ -23,6 +24,8 @@ export const subscribeToPushNotifications = asyncHandler(async (req, res) => {
       { new: true }
     );
 
+    user.avatar = await base64Encode(user.avatar);
+
     return success(res, { user }, "Subscription saved.");
   } catch (err) {
     console.error("Error saving subscription:", err);
@@ -44,8 +47,12 @@ export const unsubscribeToPushNotifications = asyncHandler(async (req, res) => {
           $elemMatch: { endpoint: subscription.endpoint },
         },
       },
-      { $pull: { pushNotificationSubscriptions: { endpoint: subscription.endpoint } } },
-      { new: true } 
+      {
+        $pull: {
+          pushNotificationSubscriptions: { endpoint: subscription.endpoint },
+        },
+      },
+      { new: true }
     );
 
     if (!result) {
@@ -58,4 +65,3 @@ export const unsubscribeToPushNotifications = asyncHandler(async (req, res) => {
     return error(res, null, "Failed to remove subscription");
   }
 });
-
