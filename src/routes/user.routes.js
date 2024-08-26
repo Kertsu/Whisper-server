@@ -22,7 +22,6 @@ import {
   verifyEmail,
 } from "../controllers/user.controller.js";
 import {
-  isAuthenticated,
   isVerifiedAndAuthenticated,
 } from "../middlewares/auth.middleware.js";
 import upload from "../../config/multer.js";

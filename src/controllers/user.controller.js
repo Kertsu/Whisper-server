@@ -103,6 +103,10 @@ const login = asyncHandler(async (req, res, next) => {
     return error(res, null, "Sorry, we couldn't find your account.", 404);
   }
 
+  if(user.status === "suspended"){
+    return error(res, null, "Your account has been suspended.", 403);
+  }
+
   if (!(await user.matchPassword(password))) {
     return error(res, null, "Invalid credentials", 401);
   }

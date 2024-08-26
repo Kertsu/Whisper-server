@@ -38,6 +38,10 @@ passport.use(
           }
         }
 
+        if (user.status === "suspended") {
+          return done('Your account is suspended. If you think this is a mistake, please contact the developer kurtddbigtas@gmail.com', null)
+        }
+
         done(null, user);
       } catch (err) {
         done(err, null);
