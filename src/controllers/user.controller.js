@@ -11,6 +11,7 @@ import {
   base64Encode,
   compareHash,
   generateAndSaveRefreshToken,
+  generateRandomUsername,
   generateToken,
   hasher,
   isValidPassword,
@@ -147,7 +148,7 @@ const register = asyncHandler(async (req, res, next) => {
       );
     }
     const hashedPassword = await hasher(password);
-    const username = email.split("@")[0];
+    const username = await generateRandomUsername(7);
     const newUser = await User.create({
       email,
       username,
@@ -161,6 +162,7 @@ const register = asyncHandler(async (req, res, next) => {
 
     return success(res, { user: newUser }, "Please verify your email");
   } catch (err) {
+    console.log(err)
     return error(res, null, "Internal Server Error", 500);
   }
 });
