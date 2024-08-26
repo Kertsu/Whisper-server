@@ -12,7 +12,7 @@ import { getUserById } from "../utils/socketManager.js";
 
 const initiatorAvatarTransformations = [
   {
-    effect: "pixelate:200",
+    effect: "pixelate:300",
     quality: "1",
     fetch_format: "auto",
     angle: 90,
@@ -302,6 +302,18 @@ const initiateConversation = asyncHandler(async (req, res, next) => {
   const { username } = req.params;
   const { content } = req.body;
   const recipient = await User.findOne({ username });
+
+  const initiatorAvatarTransformations = [
+    {
+      effect: "pixelate:20",
+      fetch_format: "auto",
+      angle: 90,
+      width: 72,
+      height: 72,
+      crop: "fill",
+      quality: "auto:low",
+    },
+  ];
 
   if (!recipient) {
     return error(res, null, "User not found", 404);
