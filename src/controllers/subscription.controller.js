@@ -33,7 +33,7 @@ export const subscribeToPushNotifications = asyncHandler(async (req, res) => {
   }
 });
 
-export const unsubscribeToPushNotifications = asyncHandler(async (req, res) => {
+export const unsubscribeFromPushNotifications = asyncHandler(async (req, res) => {
   const subscription = req.body.subscription;
 
   if (!subscription || !subscription.endpoint) {
@@ -42,18 +42,11 @@ export const unsubscribeToPushNotifications = asyncHandler(async (req, res) => {
 
   try {
     const result = await User.findOneAndUpdate(
-      {
-        pushNotificationSubscriptions: {
-          $elemMatch: { endpoint: subscription.endpoint },
-        },
-      },
-      {
-        $pull: {
-          pushNotificationSubscriptions: { endpoint: subscription.endpoint },
-        },
-      },
+      { "pushNotificationSubscriptions.endpoint": subscription.endpoint },
+      { $set: { "pushNotificationSubscriptions.$.active": false } },
       { new: true }
     );
+    
 
     if (!result) {
       return error(res, null, "Subscription not found", 404);
